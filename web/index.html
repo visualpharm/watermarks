@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unbreakable — watermark research &amp; image forensics</title>
+<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='.9em' font-size='90'&gt;🔏&lt;/text&gt;&lt;/svg&gt;">
+<style>
+  :root{
+    --bg:#f4f1ea; --card:#fbf9f4; --ink:#23211c; --mut:#7c766a; --line:#e2ddd1;
+    --accent:#b4531f; --accent2:#2f6dab;
+    --ok:#3c7d4d; --okbg:#e7f0e8; --warn:#b06a16; --warnbg:#f8eedd;
+    --bad:#b3331f; --badbg:#f6e0db; --edit:#2f6dab; --editbg:#e6eef6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.55 -apple-system,"Inter",system-ui,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  a{color:var(--accent);text-decoration:none}
+  header{position:sticky;top:0;z-index:30;background:rgba(244,241,234,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  nav{max-width:1100px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;gap:8px}
+  .brand{font-weight:800;letter-spacing:-.02em;font-size:17px;cursor:pointer;margin-right:auto}
+  .brand small{color:var(--mut);font-weight:600;font-size:12px;margin-left:6px}
+  nav .nl{padding:7px 13px;border-radius:9px;color:var(--mut);font-weight:600;font-size:13.5px;cursor:pointer}
+  nav .nl.on{background:var(--ink);color:#fff}
+  .wrap{max-width:1100px;margin:0 auto;padding:34px 22px 90px}
+  h1{font-size:30px;letter-spacing:-.025em;margin:0 0 6px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);margin:40px 0 16px;font-weight:700}
+  .lead{color:var(--mut);font-size:15px;max-width:680px;margin:0 0 8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+
+  /* home */
+  .hero{padding:40px 0 6px}
+  .menu{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:26px}
+  .menu .tile{padding:26px;cursor:pointer;transition:.14s;display:flex;flex-direction:column;gap:10px}
+  .menu .tile:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.07);border-color:#d3ccbb}
+  .menu .tile .k{font-size:11px;font-weight:800;letter-spacing:.09em;color:var(--accent);text-transform:uppercase}
+  .menu .tile h3{margin:0;font-size:21px;letter-spacing:-.02em}
+  .menu .tile p{margin:0;color:var(--mut);font-size:14px}
+  .menu .tile .go{margin-top:auto;color:var(--accent);font-weight:600;font-size:14px}
+
+  /* versions grid */
+  .vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .vcard{overflow:hidden;cursor:pointer;transition:.14s}
+  .vcard:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.07)}
+  .vcard .ph{aspect-ratio:1.23/1;background:#efe9df center/cover}
+  .vcard .meta{padding:13px 15px}
+  .vcard .row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .vcard .vtag{font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;background:#ece7da;color:#6b6453;padding:2px 7px;border-radius:6px}
+  .vcard h3{margin:0;font-size:16px}
+  .vcard .desc{color:var(--mut);font-size:13px;margin-top:4px}
+  .pills{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .pill.vis{background:#efe7da;color:#7a6f56}
+  .pill.prot{background:var(--okbg);color:var(--ok)}
+
+  /* modal */
+  .modal{position:fixed;inset:0;z-index:50;background:rgba(20,18,14,.55);display:none;
+    align-items:flex-start;justify-content:center;overflow:auto;padding:30px 16px}
+  .modal.open{display:flex}
+  .sheet{background:var(--bg);border-radius:16px;max-width:980px;width:100%;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .sheet .x{float:right;cursor:pointer;color:var(--mut);font-size:22px;line-height:1;border:0;background:none}
+  .sheet h2{margin:0 0 4px;color:var(--ink);font-size:20px;text-transform:none;letter-spacing:-.01em}
+  .sheet .sub{color:var(--mut);font-size:13px;margin-bottom:16px}
+  .big{width:100%;border-radius:12px;border:1px solid var(--line);background:#efe9df}
+  .atk{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px}
+  .atk .a{padding:12px}
+  .atk img{width:100%;border-radius:9px;border:1px solid var(--line);background:#efe9df;display:block}
+  .atk .none{aspect-ratio:1.23/1;display:flex;align-items:center;justify-content:center;color:var(--mut);
+    font-size:13px;text-align:center;border:1px dashed var(--line);border-radius:9px;padding:10px}
+  .atk .hd{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .atk .hd b{font-size:14px}
+  .badge{font-size:11px;font-weight:800;letter-spacing:.04em;padding:4px 9px;border-radius:999px;white-space:nowrap}
+  .b-clean{background:var(--ok);color:#fff} .b-bad{background:var(--bad);color:#fff}
+  .b-edit{background:var(--edit);color:#fff} .b-inc{background:var(--warn);color:#fff}
+  .b-refused{background:#9b8d6f;color:#fff}
+  details.method{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+  details.method summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--accent)}
+  details.method .body{margin-top:12px;font-size:13.5px;color:#46413a}
+  details.method .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut);font-weight:700;margin:12px 0 4px}
+  .codeblk{background:#2b2820;color:#e8e2d4;border-radius:9px;padding:12px 14px;font-size:12px;white-space:pre-wrap;font-family:"JetBrains Mono",monospace}
+
+  /* detector */
+  .drops{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .drop{padding:14px;text-align:center;cursor:pointer;position:relative;transition:.12s;border:2px solid var(--line);border-radius:14px;background:var(--card)}
+  .drop.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(180,83,31,.12)}
+  .drop.over{border-color:var(--accent);background:#fcf6f1}
+  .drop .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);font-weight:700;margin-bottom:8px}
+  .drop .hint{color:var(--mut);font-size:13px;padding:22px 6px}
+  .drop .hint b{color:var(--accent)}
+  .drop img.prev{max-width:100%;max-height:230px;border-radius:9px;
+    background:repeating-conic-gradient(#eee 0 25%,#f7f7f7 0 50%) 50%/16px 16px}
+  .drop .fn{font-size:12px;color:var(--mut);margin-top:7px;word-break:break-all}
+  .drop .browse{position:absolute;top:10px;right:12px;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600}
+  input[type=file]{display:none}
+  .ctl{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:18px 0 4px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{border:0;background:var(--card);padding:9px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--mut)}
+  .seg button.on{background:var(--ink);color:#fff}
+  .link{background:none;border:0;color:var(--accent);cursor:pointer;font:inherit;font-size:13px}
+  .pw{display:none;align-items:center;gap:7px}
+  .pw input{border:1px solid var(--line);border-radius:9px;padding:8px 11px;font:inherit;font-size:13px;width:160px}
+  .go{margin-left:auto;border:0;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:11px 26px;border-radius:11px;cursor:pointer}
+  .go:disabled{opacity:.4;cursor:not-allowed}
+  #out{margin-top:24px;display:none}
+  .verdict{display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:14px;border:1px solid var(--line);flex-wrap:wrap}
+  .verdict .vbadge{font-size:13px;font-weight:800;letter-spacing:.05em;padding:7px 14px;border-radius:999px}
+  .v-clean{background:var(--okbg)} .v-clean .vbadge{background:var(--ok);color:#fff}
+  .v-bad{background:var(--badbg)} .v-bad .vbadge{background:var(--bad);color:#fff}
+  .v-inc{background:var(--warnbg)} .v-inc .vbadge{background:var(--warn);color:#fff}
+  .v-edit{background:var(--editbg)} .v-edit .vbadge{background:var(--edit);color:#fff}
+  .verdict .sum{font-size:14.5px} .verdict .conf{margin-left:auto;text-align:right;color:var(--mut);font-size:12px}
+  .verdict .conf b{display:block;font-size:22px;color:var(--ink)}
+  .grid2{display:grid;grid-template-columns:1.1fr 1fr;gap:18px;margin-top:18px}
+  .panel{padding:16px 18px}
+  .panel h3{margin:0 0 12px;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--mut)}
+  ul.reasons{list-style:none;margin:0;padding:0}
+  ul.reasons li{position:relative;padding:6px 0 6px 26px;font-size:13.5px;border-bottom:1px solid #efe9dd}
+  ul.reasons li:last-child{border-bottom:0}
+  ul.reasons li::before{position:absolute;left:0;top:6px;font-weight:800}
+  li.ok::before{content:"✓";color:var(--ok)} li.warn::before{content:"!";color:var(--warn)}
+  .heat{width:100%;border-radius:9px;border:1px solid var(--line);background:#11131a}
+  .legend{font-size:11px;color:var(--mut);margin-top:7px;display:flex;gap:12px;flex-wrap:wrap}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+  details.metrics summary{cursor:pointer;font-size:12.5px;color:var(--mut);margin-top:14px}
+  table.mx{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
+  table.mx td{padding:4px 8px;border-bottom:1px solid #efe9dd}
+  table.mx td:last-child{text-align:right}
+  .ai{margin-top:18px;padding:16px 18px;border-left:3px solid #7a5aa6}
+  .ai h3{color:#7a5aa6}.ai .meta{font-size:11.5px;color:var(--mut);margin-top:10px}
+  .err{color:var(--bad);font-size:13px}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:7px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .note{background:#fbf3ee;border:1px solid #f0ddd0;color:#7a4524;border-radius:10px;padding:9px 13px;font-size:12.5px;margin-top:12px}
+  .hidden{display:none}
+  @media(max-width:760px){
+    .menu,.vgrid,.atk,.grid2,.drops{grid-template-columns:1fr}
+    table.mx{margin-left:-14px;margin-right:-14px;width:calc(100% + 28px)}
+    .wrap{padding:24px 14px 60px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <span class="brand" data-route="home">Unbreakable<small>watermark lab</small></span>
+    <span class="nl" data-route="watermarks">In Search of an Unbreakable Watermark</span>
+    <span class="nl" data-route="detector">Detector — Image Forensics</span>
+  </nav>
+</header>
+
+<!-- HOME -->
+<div class="wrap view" id="view-home">
+  <div class="hero">
+    <h1>Can a watermark survive an AI eraser?</h1>
+    <p class="lead">Two tools. One asks how to mark an image so no model can clean it without
+      destroying the asset. The other tells you whether a given file was scaled, edited, or scrubbed.</p>
+  </div>
+  <div class="menu">
+    <div class="tile card" data-route="watermarks">
+      <span class="k">Research</span>
+      <h3>In Search of an Unbreakable Watermark</h3>
+      <p>Four versions of a protected-preview watermark, each attacked with image-editing
+         models. See what survives.</p>
+      <span class="go">Open the lab →</span>
+    </div>
+    <div class="tile card" data-route="detector">
+      <span class="k">Tool</span>
+      <h3>Detector — Image Forensics</h3>
+      <p>Upload an original and a copy. Find out if it's a clean resize, an edited composite,
+         or a watermark-scrubbed manipulation.</p>
+      <span class="go">Open the detector →</span>
+    </div>
+  </div>
+</div>
+
+<!-- WATERMARKS -->
+<div class="wrap view hidden" id="view-watermarks">
+  <h1>In Search of an Unbreakable Watermark</h1>
+  <p class="lead">Each version is rendered on the same box. We then ask image-editing models to
+    remove the watermark, and run the result through the Detector. A verdict of
+    <b>manipulated</b> means the eraser had to damage the asset — the watermark won.</p>
+  <div class="vgrid" id="vgrid"></div>
+  <p class="note" id="vmeta"></p>
+</div>
+
+<!-- DETECTOR -->
+<div class="wrap view hidden" id="view-detector">
+  <h1>Detector — Image Forensics</h1>
+  <p class="lead">Click an area to select it, then <b>paste</b> (⌘/Ctrl-V) an image into it — or use
+    <i>browse</i> / drag-and-drop. Click the other area and paste to fill it. Original vs review →
+    clean resize, edited, or manipulated.</p>
+
+  <div class="drops">
+    <div class="drop active" id="dzA" data-side="A">
+      <span class="browse" id="brA">browse</span>
+      <div class="lbl">Original (reference)</div>
+      <div class="hint" id="hintA">Selected — <b>paste an image here</b>, or browse / drop</div>
+      <img class="prev" id="prevA" style="display:none">
+      <div class="fn" id="fnA"></div>
+      <input type="file" id="fA" accept="image/*">
+    </div>
+    <div class="drop" id="dzB" data-side="B">
+      <span class="browse" id="brB">browse</span>
+      <div class="lbl">Under review</div>
+      <div class="hint" id="hintB">Click to select, then <b>paste</b> — or browse / drop</div>
+      <img class="prev" id="prevB" style="display:none">
+      <div class="fn" id="fnB"></div>
+      <input type="file" id="fB" accept="image/*">
+    </div>
+  </div>
+
+  <div class="ctl">
+    <div class="seg" id="seg">
+      <button data-m="algo" class="on">Algorithmic · free</button>
+      <button data-m="ai">Advanced AI 🔒</button>
+    </div>
+    <span class="pw" id="pw"><input type="password" id="pwin" placeholder="AI access password"></span>
+    <button class="link" id="swap">⇄ Swap</button>
+    <button class="link" id="demo">↳ Load example</button>
+    <button class="go" id="go" disabled>Analyze</button>
+  </div>
+  <div class="note hidden" id="aiwarn"></div>
+  <div id="out"></div>
+</div>
+
+<!-- version detail modal -->
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+
+<script src="/web/app.js"></script>
+</body>
+</html>

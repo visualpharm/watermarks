@@ -1,0 +1,102 @@
+{
+  "base": "wm-clean.jpg",
+  "versions": [
+    {
+      "id": "v1",
+      "image": "wm-v1.jpg",
+      "title": "Initial",
+      "visibility": "High",
+      "protection": "Low",
+      "commit": "feat(wm): v1 initial \u2014 fused multiply preview + behind-edge occlusion + loud diagonal PREVIEW/SAMPLE decoy",
+      "approach": "A fused multiply pass over the whole object plus a behind-the-edges layer and a loud full-canvas PREVIEW/SAMPLE decoy. Reads as protected but the decoy is a separable overlay \u2014 easy for a model to strip.",
+      "attacks": [
+        {
+          "model": "Flux Kontext",
+          "image": "wm-v1-kontext.jpg",
+          "verdict": "manipulated",
+          "confidence": 74,
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+        },
+        {
+          "model": "nano-banana",
+          "image": null,
+          "verdict": "refused",
+          "summary": "The model refused or failed to remove the watermark."
+        }
+      ]
+    },
+    {
+      "id": "v2",
+      "image": "wm-v2.jpg",
+      "title": "Kontext-patch",
+      "visibility": "High",
+      "protection": "High",
+      "commit": "feat(wm): v2 kontext-patch \u2014 bake PREVIEW into cardboard (per-face perspective), green label + barcode, FRAGILE sticker, cast-shadow dither; entangled so removal is destructive",
+      "approach": "PREVIEW is multiplied INTO the cardboard per box face (perspective shear + lighting), woven into the green label and its barcodes, printed into the FRAGILE sticker, and dithered into the cast shadow. Removing it means rebuilding the asset.",
+      "attacks": [
+        {
+          "model": "Flux Kontext",
+          "image": "wm-v2-kontext.jpg",
+          "verdict": "manipulated",
+          "confidence": 74,
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+        },
+        {
+          "model": "nano-banana",
+          "image": "wm-v2-nano.jpg",
+          "verdict": "manipulated",
+          "confidence": 74,
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+        }
+      ]
+    },
+    {
+      "id": "v3",
+      "image": "wm-v3.jpg",
+      "title": "Low-visibility",
+      "visibility": "Low",
+      "protection": "High (~95%)",
+      "commit": "perf(wm): v3 low-visibility \u2014 drop the loud removable decoy + dense grid + behind layer; keep only the entangled object-local marks (~95% protection at a fraction of the visual noise)",
+      "approach": "Drops the methods that are invasive AND easily removed (the loud decoy, the SAMPLE grid, the background layer) and keeps only the entangled, hard-to-remove marks baked into cardboard, label, barcode and sticker. Much cleaner preview, nearly the same protection.",
+      "attacks": [
+        {
+          "model": "Flux Kontext",
+          "image": "wm-v3-kontext.jpg",
+          "verdict": "manipulated",
+          "confidence": 74,
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+        },
+        {
+          "model": "nano-banana",
+          "image": null,
+          "verdict": "refused",
+          "summary": "The model refused or failed to remove the watermark."
+        }
+      ]
+    },
+    {
+      "id": "v4",
+      "image": "wm-v4.jpg",
+      "title": "Poison",
+      "visibility": "Low",
+      "protection": "Maximum",
+      "commit": "feat(wm): v4 poison \u2014 v3 + irreversible mosaic/scramble of the hard-to-redraw regions (FRAGILE sticker + green-label barcodes) so a remover can't restore them",
+      "approach": "On top of v3, the hardest-to-redraw regions (the FRAGILE sticker and the green-label barcodes) are mosaicked and channel-scrambled irreversibly. Even a perfect watermark remover cannot recover the original detail \u2014 the information is gone.",
+      "attacks": [
+        {
+          "model": "Flux Kontext",
+          "image": "wm-v4-kontext.jpg",
+          "verdict": "manipulated",
+          "confidence": 74,
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+        },
+        {
+          "model": "nano-banana",
+          "image": null,
+          "verdict": "refused",
+          "summary": "The model refused or failed to remove the watermark."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,230 @@
+// ---------------- routing ----------------
+const VIEWS = ["home", "watermarks", "detector"];
+function route(){
+  closeModal();
+  let r = (location.hash || "#home").replace("#", "").replace("/", "");
+  if (!VIEWS.includes(r)) r = "home";
+  VIEWS.forEach(v => document.getElementById("view-"+v).classList.toggle("hidden", v !== r));
+  document.querySelectorAll("nav .nl").forEach(n => n.classList.toggle("on", n.dataset.route === r));
+  window.scrollTo(0, 0);
+  if (r === "watermarks") loadVersions();
+  if (r === "detector") checkHealth();
+}
+document.querySelectorAll("[data-route]").forEach(el =>
+  el.addEventListener("click", () => location.hash = el.dataset.route));
+window.addEventListener("hashchange", route);
+
+// ---------------- versions ----------------
+let VERSIONS = null;
+async function loadVersions(){
+  if (VERSIONS) return;
+  try { VERSIONS = await (await fetch("/api/versions")).json(); }
+  catch(e){ return; }
+  const g = document.getElementById("vgrid");
+  g.innerHTML = VERSIONS.versions.map((v,i) => `
+    <div class="vcard card" data-i="${i}">
+      <div class="ph" style="background-image:url('${v.image}')"></div>
+      <div class="meta">
+        <div class="row"><span class="vtag">${v.id}</span><h3>${v.title}</h3></div>
+        <div class="desc">${v.approach.split(".")[0]}.</div>
+        <div class="pills">
+          <span class="pill vis">visibility: ${v.visibility}</span>
+          <span class="pill prot">protection: ${v.protection}</span>
+        </div>
+      </div>
+    </div>`).join("");
+  g.querySelectorAll(".vcard").forEach(c =>
+    c.addEventListener("click", () => openVersion(+c.dataset.i)));
+  document.getElementById("vmeta").textContent =
+    `Generated ${VERSIONS.meta.generated_on}. Base: ${VERSIONS.meta.base_source}. ` +
+    `Each version attacked with the removal prompt shown in every card's "Prompt & method".`;
+}
+
+function vBadge(verdict){
+  const m = {clean_rescale:["CLEAN — restored","b-clean"], manipulated:["MANIPULATED — asset damaged","b-bad"],
+    edited:["EDITED","b-edit"], inconclusive:["INCONCLUSIVE","b-inc"], refused:["REMOVAL FAILED","b-refused"]};
+  return m[verdict] || ["?","b-inc"];
+}
+function interpret(verdict){
+  if (verdict === "manipulated") return "The eraser had to reconstruct the box to strip the mark — the watermark held.";
+  if (verdict === "refused") return "The model declined or failed to remove it — the watermark held.";
+  if (verdict === "clean_rescale") return "The model cleanly removed the watermark — this version was beaten.";
+  return "";
+}
+function openVersion(i){
+  const v = VERSIONS.versions[i], meta = VERSIONS.meta;
+  const atk = v.attacks.map(a => {
+    const [lab, cls] = vBadge(a.verdict);
+    const img = a.image
+      ? `<img src="${a.image}">`
+      : `<div class="none">model refused / failed to remove the watermark</div>`;
+    const conf = a.confidence ? ` (${a.confidence}%)` : "";
+    return `<div class="a card">
+        <div class="hd"><b>${a.model}</b><span class="badge ${cls}">${lab}${conf}</span></div>
+        ${img}
+        <div class="desc" style="color:var(--mut);font-size:12.5px;margin-top:8px">${interpret(a.verdict)}</div>
+        <div class="mono" style="font-size:10.5px;color:#9a9385;margin-top:6px">${a.model_id||""}</div>
+      </div>`;
+  }).join("");
+  document.getElementById("sheet").innerHTML = `
+    <button class="x" onclick="closeModal()">×</button>
+    <h2><span class="vtag mono">${v.id}</span> &nbsp;${v.title}</h2>
+    <div class="sub">Generated ${meta.generated_on} · visibility ${v.visibility} · protection ${v.protection}</div>
+    <img class="big" src="${v.image}">
+    <h2 style="margin:22px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut)">AI removal attempts</h2>
+    <div class="atk">${atk}</div>
+    <details class="method">
+      <summary>Prompt &amp; method</summary>
+      <div class="body">
+        <div class="lbl">How this version watermarks</div>
+        ${v.approach}
+        <div class="lbl">Commit</div>
+        <div class="codeblk">${v.commit}</div>
+        <div class="lbl">AI removal prompt used to attack it</div>
+        <div class="codeblk">${meta.removal_prompt}</div>
+      </div>
+    </details>`;
+  document.getElementById("modal").classList.add("open");
+}
+function closeModal(){ document.getElementById("modal").classList.remove("open"); }
+document.getElementById("modal").addEventListener("click", e => {
+  if (e.target.id === "modal") closeModal();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+// ---------------- detector ----------------
+const S = {A:null, B:null, nameA:"", nameB:"", active:"A", mode:"algo", aiPw:false};
+
+function setActive(side){
+  S.active = side;
+  ["A","B"].forEach(s => document.getElementById("dz"+s).classList.toggle("active", s === side));
+}
+function read(file, side){
+  const fr = new FileReader();
+  fr.onload = () => set(side, fr.result, file.name || "pasted.png");
+  fr.readAsDataURL(file);
+}
+function set(side, dataurl, name){
+  S[side] = dataurl; S["name"+side] = name || "image";
+  redraw(side); setActive(side);
+  document.getElementById("go").disabled = !(S.A && S.B);
+}
+function redraw(side){
+  const img = document.getElementById("prev"+side), hint = document.getElementById("hint"+side),
+        fn = document.getElementById("fn"+side);
+  if (!S[side]){ img.style.display = "none"; hint.style.display = ""; fn.textContent = ""; return; }
+  const tmp = new Image();
+  tmp.onload = () => fn.textContent = S["name"+side] + "  ·  " + tmp.naturalWidth + "×" + tmp.naturalHeight;
+  tmp.src = S[side];
+  img.src = S[side]; img.style.display = "inline-block"; hint.style.display = "none";
+}
+["A","B"].forEach(side => {
+  const dz = document.getElementById("dz"+side), inp = document.getElementById("f"+side),
+        br = document.getElementById("br"+side);
+  dz.addEventListener("click", () => setActive(side));        // click selects the area
+  br.addEventListener("click", e => { e.stopPropagation(); inp.click(); });
+  inp.addEventListener("click", e => e.stopPropagation());
+  inp.addEventListener("change", e => { if (e.target.files[0]) read(e.target.files[0], side); e.target.value = ""; });
+  dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("over"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("over"));
+  dz.addEventListener("drop", e => { e.preventDefault(); dz.classList.remove("over");
+    if (e.dataTransfer.files[0]) read(e.dataTransfer.files[0], side); });
+});
+window.addEventListener("paste", e => {
+  if (document.getElementById("view-detector").classList.contains("hidden")) return;
+  for (const it of e.clipboardData.items)
+    if (it.type.startsWith("image/")) { read(it.getAsFile(), S.active); break; }
+});
+document.getElementById("swap").addEventListener("click", () => {
+  [S.A, S.B] = [S.B, S.A]; [S.nameA, S.nameB] = [S.nameB, S.nameA];
+  redraw("A"); redraw("B");
+});
+document.getElementById("demo").addEventListener("click", async () => {
+  try {
+    const r = await (await fetch("/api/example")).json();
+    if (r.original){ set("A", r.original, "example-master.png"); set("B", r.review, "edem.png"); }
+  } catch(e){ alert("Could not load example."); }
+});
+
+let HEALTH = null;
+async function checkHealth(){
+  if (!HEALTH){ try { HEALTH = await (await fetch("/api/health")).json(); } catch(e){ HEALTH = {}; } }
+  updateMode();
+}
+document.getElementById("seg").addEventListener("click", e => {
+  if (!e.target.dataset.m) return;
+  S.mode = e.target.dataset.m;
+  document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("on", b === e.target));
+  updateMode();
+});
+function updateMode(){
+  const pw = document.getElementById("pw"), warn = document.getElementById("aiwarn");
+  const needPw = S.mode === "ai" && HEALTH && HEALTH.ai_requires_password;
+  pw.style.display = needPw ? "inline-flex" : "none";
+  if (S.mode === "ai" && HEALTH && !HEALTH.ai){
+    warn.classList.remove("hidden"); warn.textContent = "AI mode is not configured on this server — it will return the algorithmic result.";
+  } else warn.classList.add("hidden");
+}
+
+document.getElementById("go").addEventListener("click", async () => {
+  const go = document.getElementById("go"), out = document.getElementById("out");
+  go.disabled = true; go.innerHTML = '<span class="spin"></span>Analyzing…'; out.style.display = "none";
+  try {
+    const headers = {"Content-Type":"application/json"};
+    const pwval = document.getElementById("pwin").value;
+    if (S.mode === "ai" && pwval) headers["X-AI-Password"] = pwval;
+    const res = await fetch("/api/forensic", {method:"POST", headers,
+      body: JSON.stringify({original:S.A, review:S.B, mode:S.mode})});
+    const data = await res.json();
+    if (data.error) out.innerHTML = `<div class="err">${data.error}</div>`;
+    else render(data);
+    out.style.display = "block";
+  } catch(e){ out.innerHTML = `<div class="err">Request failed: ${e}</div>`; out.style.display = "block"; }
+  go.disabled = false; go.textContent = "Analyze";
+});
+
+function vClass(v){ return v==="clean_rescale"?"v-clean":v==="manipulated"?"v-bad":v==="edited"?"v-edit":"v-inc"; }
+function vLabel(v){ return v==="clean_rescale"?"CLEAN RESCALE":v==="manipulated"?"MANIPULATED":v==="edited"?"EDITED":"INCONCLUSIVE"; }
+
+function render(data){
+  const a = data.algo, out = document.getElementById("out");
+  let h = `<div class="verdict ${vClass(a.verdict)}"><span class="vbadge">${vLabel(a.verdict)}</span>
+    <span class="sum">${a.summary}</span><span class="conf">algorithmic<b>${a.confidence}%</b></span></div><div class="grid2">`;
+  h += `<div class="panel card"><h3>Evidence</h3><ul class="reasons">`;
+  (a.reasons||[]).forEach(r => h += `<li class="${r[0]}">${r[1]}</li>`);
+  h += `</ul>`;
+  if (a.metrics && Object.keys(a.metrics).length){
+    h += `<details class="metrics"><summary>Show all metrics</summary><table class="mx">`;
+    for (const k in a.metrics) h += `<tr><td style="color:var(--mut)">${k}</td><td class="mono">${a.metrics[k]}</td></tr>`;
+    h += `</table></details>`;
+  }
+  h += `</div>`;
+  if (a.heatmap){
+    h += `<div class="panel card"><h3>Difference heat-map</h3><img class="heat" src="${a.heatmap}">
+      <div class="legend">
+        <span><span class="dot" style="background:#cc2222"></span>edge (normal resize)</span>
+        <span><span class="dot" style="background:#ffe628"></span>smooth-area (removal)</span>
+        <span><span class="dot" style="background:#00c8ff"></span>added</span>
+        <span><span class="dot" style="background:#ff3cc8"></span>removed</span>
+      </div></div>`;
+  }
+  h += `</div>`;
+  if (data.ai){
+    const ai = data.ai;
+    if (ai.error) h += `<div class="ai card"><h3>AI examiner</h3><div class="err">${ai.error}</div></div>`;
+    else {
+      h += `<div class="ai card"><h3>AI examiner — ${vLabel(ai.verdict||"inconclusive")} (${ai.confidence??"?"}%)</h3>
+        <div>${ai.reasoning||""}</div>`;
+      if (ai.artifacts && ai.artifacts.length){
+        h += `<ul class="reasons" style="margin-top:10px">`;
+        ai.artifacts.forEach(x => h += `<li class="warn">${x}</li>`); h += `</ul>`;
+      }
+      h += `<div class="meta">watermark removal suspected: <b>${ai.watermark_removal_suspected?"yes":"no"}</b>
+        · background/scene added: <b>${ai.background_or_scene_added?"yes":"no"}</b> · model ${ai._model||""}</div></div>`;
+    }
+  }
+  out.innerHTML = h;
+}
+
+setActive("A");
+route();
