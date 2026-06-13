@@ -38,7 +38,35 @@
   .menu .tile .k{font-size:11px;font-weight:800;letter-spacing:.09em;color:var(--accent);text-transform:uppercase}
   .menu .tile h3{margin:0;font-size:21px;letter-spacing:-.02em}
   .menu .tile p{margin:0;color:var(--mut);font-size:14px}
-  .menu .tile .go{margin-top:auto;color:var(--accent);font-weight:600;font-size:14px}
+  .menu .tile .cta{align-self:flex-start;margin-top:6px;display:inline-flex;align-items:center;gap:6px;
+    background:var(--accent);color:#fff;font-weight:600;font-size:13.5px;padding:9px 16px;border-radius:10px}
+  .menu .tile:hover .cta{background:#9e451a}
+
+  /* before/after slider */
+  .ba{position:relative;margin:30px 0 4px;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+    aspect-ratio:1.3/1;cursor:ew-resize;user-select:none;background:#efe9df;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  .ba .layer{position:absolute;inset:0}
+  .ba .layer img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+  .ba .before{clip-path:inset(0 50% 0 0)}
+  .ba .handle{position:absolute;top:0;bottom:0;left:50%;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+  .ba .handle::after{content:"⇄";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:34px;height:34px;border-radius:50%;background:#fff;color:#444;display:flex;align-items:center;
+    justify-content:center;font-size:15px;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+  .ba .balbl{position:absolute;bottom:10px;font-size:10.5px;font-weight:700;letter-spacing:.04em;
+    padding:3px 8px;border-radius:6px;background:rgba(20,18,14,.62);color:#fff;text-transform:uppercase}
+  .ba .balbl.l{left:10px} .ba .balbl.r{right:10px}
+  .cap{color:var(--mut);font-size:12px;margin:2px 0 0}
+
+  /* detector history */
+  #hist{margin-top:28px}
+  .hlist{display:flex;gap:10px;flex-wrap:wrap}
+  .hitem{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:11px;
+    background:var(--card);padding:7px 11px 7px 7px;font-size:12px}
+  .hitem .thumbs{display:flex}
+  .hitem .thumbs img{width:34px;height:34px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+  .hitem .thumbs img:last-child{margin-left:-8px}
+  .hitem b{font-weight:700} .hitem .t{color:var(--mut);font-size:10.5px}
+  .hbadge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px;color:#fff}
 
   /* versions grid */
   .vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
@@ -127,6 +155,15 @@
   table.mx{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
   table.mx td{padding:4px 8px;border-bottom:1px solid #efe9dd}
   table.mx td:last-child{text-align:right}
+  .evid{margin-bottom:18px;padding:18px 20px;border:1px solid var(--line);border-radius:14px}
+  .evid.bad{background:#fbe9e4;border-color:#eccfc6} .evid.warn{background:var(--warnbg)} .evid.ok{background:var(--okbg)}
+  .evid .ehead{font-size:17px;font-weight:800;letter-spacing:-.01em;margin-bottom:12px}
+  .evid.bad .ehead{color:var(--bad)} .evid.ok .ehead{color:var(--ok)}
+  .proof{display:flex;gap:10px;padding:8px 0;border-top:1px solid rgba(0,0,0,.06);font-size:13.5px}
+  .proof:first-of-type{border-top:0}
+  .proof .pd{flex:0 0 13px;font-weight:900;font-size:15px;line-height:1.2}
+  .proof.bad .pd{color:var(--bad)} .proof.warn .pd{color:var(--warn)} .proof.ok .pd{color:var(--ok)}
+  .proof b{display:block} .proof .det{color:#5c554a}
   .ai{margin-top:18px;padding:16px 18px;border-left:3px solid #7a5aa6}
   .ai h3{color:#7a5aa6}.ai .meta{font-size:11.5px;color:var(--mut);margin-top:10px}
   .err{color:var(--bad);font-size:13px}
@@ -157,20 +194,31 @@
     <p class="lead">Two tools. One asks how to mark an image so no model can clean it without
       destroying the asset. The other tells you whether a given file was scaled, edited, or scrubbed.</p>
   </div>
+
+  <div class="ba" id="ba">
+    <div class="layer after"><img src="/static/versions/wm-v2-kontext.jpg" alt="AI removal result"></div>
+    <div class="layer before" id="baBefore"><img src="/static/versions/wm-v2.jpg" alt="watermarked"></div>
+    <div class="handle" id="baHandle"></div>
+    <span class="balbl l">watermarked</span>
+    <span class="balbl r">after AI "removal"</span>
+  </div>
+  <p class="cap">Drag the slider: the watermark is baked into the box. The best AI eraser can only
+    strip it by rebuilding the asset — different cardboard, garbled label and barcode.</p>
+
   <div class="menu">
     <div class="tile card" data-route="watermarks">
       <span class="k">Research</span>
       <h3>In Search of an Unbreakable Watermark</h3>
-      <p>Four versions of a protected-preview watermark, each attacked with image-editing
+      <p>Versions of a protected-preview watermark, each attacked with several image-editing
          models. See what survives.</p>
-      <span class="go">Open the lab →</span>
+      <span class="cta">Open the lab →</span>
     </div>
     <div class="tile card" data-route="detector">
       <span class="k">Tool</span>
       <h3>Detector — Image Forensics</h3>
       <p>Upload an original and a copy. Find out if it's a clean resize, an edited composite,
          or a watermark-scrubbed manipulation.</p>
-      <span class="go">Open the detector →</span>
+      <span class="cta">Open the detector →</span>
     </div>
   </div>
 </div>
@@ -189,8 +237,9 @@
 <div class="wrap view hidden" id="view-detector">
   <h1>Detector — Image Forensics</h1>
   <p class="lead">Click an area to select it, then <b>paste</b> (⌘/Ctrl-V) an image into it — or use
-    <i>browse</i> / drag-and-drop. Click the other area and paste to fill it. Original vs review →
-    clean resize, edited, or manipulated.</p>
+    <i>browse</i> / drag-and-drop. Beyond clean-resize vs manipulated, it harvests <b>forgery
+    evidence</b>: the registry serial, our invisible watermark, and the suspect's own C2PA /
+    AI-tool traces.</p>
 
   <div class="drops">
     <div class="drop active" id="dzA" data-side="A">
@@ -218,11 +267,17 @@
     </div>
     <span class="pw" id="pw"><input type="password" id="pwin" placeholder="AI access password"></span>
     <button class="link" id="swap">⇄ Swap</button>
-    <button class="link" id="demo">↳ Load example</button>
+    <button class="link" id="demo">↳ Load AI-theft example</button>
     <button class="go" id="go" disabled>Analyze</button>
   </div>
   <div class="note hidden" id="aiwarn"></div>
   <div id="out"></div>
+
+  <div id="hist" class="hidden">
+    <h2 style="display:flex;align-items:center;gap:10px">Recent detections
+      <button class="link" id="histClear" style="font-size:12px">clear</button></h2>
+    <div class="hlist" id="hlist"></div>
+  </div>
 </div>
 
 <!-- version detail modal -->

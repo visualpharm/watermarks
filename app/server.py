@@ -14,7 +14,7 @@ import base64, io, json, os, re, urllib.request, urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from PIL import Image, ImageDraw, ImageFont
-import forensic
+import forensic, invisible, provenance, registry
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -37,7 +37,10 @@ REMOVAL_PROMPT = (
     "clean, watermark-free product image, keeping the box, stickers and labels intact.")
 
 MODEL_IDS = {"Flux Kontext": "fal-ai/flux-pro/kontext",
-             "nano-banana": "fal-ai/nano-banana/edit  (Gemini 2.5 Flash Image)"}
+             "Flux Kontext Max": "fal-ai/flux-pro/kontext/max",
+             "nano-banana": "fal-ai/nano-banana/edit  (Gemini 2.5 Flash Image)",
+             "Qwen Image Edit": "fal-ai/qwen-image-edit",
+             "SeedEdit 3.0": "fal-ai/bytedance/seededit/v3/edit-image"}
 GENERATED_ON = os.environ.get("VERSIONS_DATE", "2026-06-13")
 
 
@@ -92,6 +95,13 @@ def _thumb(pil, mx=900, fmt="PNG"):
     buf = io.BytesIO(); im.save(buf, format=fmt, quality=82)
     mime = "image/png" if fmt == "PNG" else "image/jpeg"
     return f"data:{mime};base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+def _rawurl(path):
+    ext = os.path.splitext(path)[1].lower().lstrip(".")
+    mime = "image/png" if ext == "png" else "image/jpeg"
+    with open(path, "rb") as f:
+        return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
 
 def _font(sz):
@@ -212,6 +222,54 @@ def _ai_available():
     return any(KEYS.get(PROVIDERS[p.strip()][1]) for p in PROVIDER_ORDER if p.strip() in PROVIDERS)
 
 
+# ----------------------------------------------------- forgery evidence ------
+def build_evidence(orig_bytes, review_bytes, algo):
+    """Harvest independent proofs that the REVIEW is a stolen/forged copy."""
+    rev_inv = invisible.extract(Image.open(io.BytesIO(review_bytes)))
+    orig_inv = invisible.extract(Image.open(io.BytesIO(orig_bytes)))
+    prov = provenance.read_provenance(review_bytes)
+    serial = rev_inv.get("serial", "") if rev_inv.get("found") else ""
+    reg = registry.validate(serial)
+    proofs = []
+
+    # 1. registry serial / invisible watermark
+    if reg["status"] == "valid":
+        proofs.append({"sev": "ok", "label": "Registry serial", "detail": reg["message"]})
+    elif rev_inv.get("found"):
+        proofs.append({"sev": "bad", "label": "Registry serial", "detail": reg["message"]})
+    elif orig_inv.get("found"):
+        proofs.append({"sev": "bad", "label": "Invisible watermark stripped",
+                       "detail": f"The original carries registered serial "
+                                 f"{orig_inv.get('serial')}, but the review has none — "
+                                 "the mark was scrubbed or the image was regenerated."})
+    else:
+        proofs.append({"sev": "warn", "label": "Invisible watermark",
+                       "detail": "No registry serial found in either file."})
+
+    # 2. forensic reconstruction
+    fv = algo.get("verdict")
+    sev = {"manipulated": "bad", "edited": "warn", "inconclusive": "warn"}.get(fv, "ok")
+    proofs.append({"sev": sev, "label": "Forensic reconstruction", "detail": algo.get("summary", "")})
+
+    # 3. embedded AI provenance (the thief's own tool)
+    if prov["verdict"] in ("ai_generated", "ai_edited"):
+        proofs.append({"sev": "bad", "label": "Embedded AI provenance (C2PA)", "detail": prov["summary"]})
+    elif prov["verdict"] in ("has_provenance", "tool_trace"):
+        proofs.append({"sev": "warn", "label": "Provenance trace", "detail": prov["summary"]})
+    else:
+        proofs.append({"sev": "ok", "label": "Provenance", "detail": prov["summary"]})
+
+    signals = sum(1 for p in proofs if p["sev"] == "bad")
+    if signals >= 2:
+        head = f"Forgery confirmed — {signals} independent proofs"
+    elif signals == 1:
+        head = "Likely forgery — 1 proof"
+    else:
+        head = "No forgery signals"
+    return {"headline": head, "signals": signals, "proofs": proofs,
+            "serial_review": rev_inv, "serial_original": orig_inv}
+
+
 # ----------------------------------------------------------------- http ------
 CTYPE = {".html": "text/html; charset=utf-8", ".js": "text/javascript",
          ".css": "text/css", ".png": "image/png", ".jpg": "image/jpeg",
@@ -287,9 +345,14 @@ class H(BaseHTTPRequestHandler):
         self._send(data)
 
     def _example(self):
+        case = self.path.split("case=")[-1].split("&")[0] if "case=" in self.path else "theft"
         try:
-            o = _thumb(Image.open(os.path.join(STATIC, "example-master.png")), 900, "PNG")
-            r = _thumb(Image.open(os.path.join(STATIC, "example-edem.png")), 900, "PNG")
+            if case == "resize":
+                o = _thumb(Image.open(os.path.join(STATIC, "example-master.png")), 900, "PNG")
+                r = _thumb(Image.open(os.path.join(STATIC, "example-edem.png")), 900, "PNG")
+            else:   # theft: full-res marked master (invisible serial intact) vs AI suspect
+                o = _rawurl(os.path.join(STATIC, "versions", "wm-v7.png"))
+                r = _rawurl(os.path.join(STATIC, "suspect-ai-edited.png"))
             self._send({"original": o, "review": r})
         except Exception as e:
             self._send({"error": str(e)}, 500)
@@ -312,6 +375,10 @@ class H(BaseHTTPRequestHandler):
         except Exception as e:
             return self._send({"error": f"analysis failed: {e}"}, 500)
         out = {"algo": algo}
+        try:
+            out["evidence"] = build_evidence(a, b, algo)
+        except Exception as e:
+            out["evidence"] = {"error": str(e)}
         if mode == "ai":
             out["ai"] = ai_opinion(a, b, algo)
         self._send(out)

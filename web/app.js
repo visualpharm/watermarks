@@ -7,8 +7,27 @@ function route(){
   VIEWS.forEach(v => document.getElementById("view-"+v).classList.toggle("hidden", v !== r));
   document.querySelectorAll("nav .nl").forEach(n => n.classList.toggle("on", n.dataset.route === r));
   window.scrollTo(0, 0);
+  if (r === "home") initBA();
   if (r === "watermarks") loadVersions();
-  if (r === "detector") checkHealth();
+  if (r === "detector") { checkHealth(); renderHistory(); }
+}
+
+// ---------------- before/after slider ----------------
+let BA_INIT = false;
+function initBA(){
+  const ba = document.getElementById("ba");
+  if (!ba || BA_INIT) return; BA_INIT = true;
+  const before = document.getElementById("baBefore"), handle = document.getElementById("baHandle");
+  const setPos = p => { p = Math.max(2, Math.min(98, p));
+    before.style.clipPath = `inset(0 ${100-p}% 0 0)`; handle.style.left = p + "%"; };
+  let drag = false;
+  const move = e => { if (!drag) return;
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - ba.getBoundingClientRect().left;
+    setPos(x / ba.clientWidth * 100); };
+  ba.addEventListener("pointerdown", e => { drag = true; move(e); });
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", () => drag = false);
+  setPos(50);
 }
 document.querySelectorAll("[data-route]").forEach(el =>
   el.addEventListener("click", () => location.hash = el.dataset.route));
@@ -141,8 +160,8 @@ document.getElementById("swap").addEventListener("click", () => {
 });
 document.getElementById("demo").addEventListener("click", async () => {
   try {
-    const r = await (await fetch("/api/example")).json();
-    if (r.original){ set("A", r.original, "example-master.png"); set("B", r.review, "edem.png"); }
+    const r = await (await fetch("/api/example?case=theft")).json();
+    if (r.original){ set("A", r.original, "master · serial WM-7F3A9C2B"); set("B", r.review, "ai-suspect · gpt-image-2"); }
   } catch(e){ alert("Could not load example."); }
 });
 
@@ -177,7 +196,11 @@ document.getElementById("go").addEventListener("click", async () => {
       body: JSON.stringify({original:S.A, review:S.B, mode:S.mode})});
     const data = await res.json();
     if (data.error) out.innerHTML = `<div class="err">${data.error}</div>`;
-    else render(data);
+    else {
+      render(data);
+      if (S.mode === "ai" && pwval) localStorage.setItem("wm_ai_pw", pwval);  // remember
+      pushHistory(data.algo);
+    }
     out.style.display = "block";
   } catch(e){ out.innerHTML = `<div class="err">Request failed: ${e}</div>`; out.style.display = "block"; }
   go.disabled = false; go.textContent = "Analyze";
@@ -188,7 +211,18 @@ function vLabel(v){ return v==="clean_rescale"?"CLEAN RESCALE":v==="manipulated"
 
 function render(data){
   const a = data.algo, out = document.getElementById("out");
-  let h = `<div class="verdict ${vClass(a.verdict)}"><span class="vbadge">${vLabel(a.verdict)}</span>
+  let h = "";
+  // forgery-evidence panel (the hero)
+  const ev = data.evidence;
+  if (ev && ev.proofs){
+    const tone = ev.signals >= 2 ? "bad" : ev.signals === 1 ? "warn" : "ok";
+    h += `<div class="evid ${tone}"><div class="ehead">${ev.headline}</div>`;
+    ev.proofs.forEach(p => { h += `<div class="proof ${p.sev}">
+      <span class="pd">${p.sev==="ok"?"✓":p.sev==="warn"?"!":"✕"}</span>
+      <span><b>${p.label}</b><span class="det">${p.detail}</span></span></div>`; });
+    h += `</div>`;
+  }
+  h += `<div class="verdict ${vClass(a.verdict)}"><span class="vbadge">${vLabel(a.verdict)}</span>
     <span class="sum">${a.summary}</span><span class="conf">algorithmic<b>${a.confidence}%</b></span></div><div class="grid2">`;
   h += `<div class="panel card"><h3>Evidence</h3><ul class="reasons">`;
   (a.reasons||[]).forEach(r => h += `<li class="${r[0]}">${r[1]}</li>`);
@@ -225,6 +259,58 @@ function render(data){
   }
   out.innerHTML = h;
 }
+
+// ---------------- detection history (localStorage) ----------------
+const HK = "wm_hist";
+function tinyThumb(dataurl){
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const s = 64 / Math.max(im.width, im.height);
+      const c = document.createElement("canvas");
+      c.width = Math.round(im.width*s); c.height = Math.round(im.height*s);
+      c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+      res(c.toDataURL("image/jpeg", 0.6));
+    };
+    im.onerror = () => res("");
+    im.src = dataurl;
+  });
+}
+async function pushHistory(algo){
+  const [a, b] = await Promise.all([tinyThumb(S.A), tinyThumb(S.B)]);
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(HK) || "[]"); } catch(e){}
+  list.unshift({t: Date.now(), verdict: algo.verdict, conf: algo.confidence, mode: S.mode, a, b});
+  list = list.slice(0, 8);
+  try { localStorage.setItem(HK, JSON.stringify(list)); } catch(e){}
+  renderHistory();
+}
+function badgeColor(v){ return v==="clean_rescale"?"#3c7d4d":v==="manipulated"?"#b3331f":v==="edited"?"#2f6dab":"#b06a16"; }
+function ago(t){ const s=(Date.now()-t)/1000;
+  if (s<60) return "just now"; if (s<3600) return Math.floor(s/60)+"m ago";
+  if (s<86400) return Math.floor(s/3600)+"h ago"; return Math.floor(s/86400)+"d ago"; }
+function renderHistory(){
+  const wrap = document.getElementById("hist"), list = document.getElementById("hlist");
+  let h = [];
+  try { h = JSON.parse(localStorage.getItem(HK) || "[]"); } catch(e){}
+  if (!h.length){ wrap.classList.add("hidden"); return; }
+  wrap.classList.remove("hidden");
+  list.innerHTML = h.map(x => `
+    <div class="hitem">
+      <div class="thumbs">${x.a?`<img src="${x.a}">`:""}${x.b?`<img src="${x.b}">`:""}</div>
+      <div><div><span class="hbadge" style="background:${badgeColor(x.verdict)}">${vLabel(x.verdict)}</span>
+        <b>${x.conf??""}%</b></div><div class="t">${x.mode==="ai"?"AI":"algo"} · ${ago(x.t)}</div></div>
+    </div>`).join("");
+}
+document.getElementById("histClear").addEventListener("click", () => {
+  localStorage.removeItem(HK); renderHistory();
+});
+
+// remember the AI password across visits
+(function(){
+  const saved = localStorage.getItem("wm_ai_pw");
+  if (saved) document.getElementById("pwin").value = saved;
+})();
 
 setActive("A");
 route();
