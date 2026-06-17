@@ -41,14 +41,18 @@ async function initBA(){
       const img = opt && opt.dataset.img;
       if (img) afterImg.src = img;
     }
+    // rank an attack by how successfully it removed the mark (best first)
+    const SUCCESS = {clean_rescale:3, edited:2, manipulated:1, refused:0};
     function showVersion(){
       const v = versions[+verSel.value];
       beforeImg.src = v.image;
-      const attacks = v.attacks.filter(a => a.image);
+      const attacks = v.attacks.filter(a => a.image)
+        .sort((x, y) => (SUCCESS[y.verdict]||0) - (SUCCESS[x.verdict]||0)
+                     || (y.confidence||0) - (x.confidence||0));
       modSel.innerHTML = attacks.length
         ? attacks.map(a => `<option data-img="${a.image}">${a.model}</option>`).join("")
         : `<option data-img="">— no model removed it —</option>`;
-      modSel.selectedIndex = 0;
+      modSel.selectedIndex = 0;   // most successful attack first
       showModel();
       cap.innerHTML = `<b>${v.id.toUpperCase()} — ${v.title}.</b> Drag to compare. ${v.approach.split(".")[0]}.`;
     }
@@ -68,10 +72,7 @@ async function initBA(){
   const move = e => { if (!drag) return;
     const x = (e.touches ? e.touches[0].clientX : e.clientX) - ba.getBoundingClientRect().left;
     setPos(x / ba.clientWidth * 100); };
-  ba.addEventListener("pointerdown", e => {
-    if (e.target.closest(".ba-pick")) return;   // don't drag while using a dropdown
-    drag = true; move(e);
-  });
+  ba.addEventListener("pointerdown", e => { drag = true; move(e); });
   window.addEventListener("pointermove", move);
   window.addEventListener("pointerup", () => drag = false);
   setPos(50);
