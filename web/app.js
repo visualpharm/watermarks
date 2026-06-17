@@ -14,9 +14,47 @@ function route(){
 
 // ---------------- before/after slider ----------------
 let BA_INIT = false;
-function initBA(){
+async function initBA(){
   const ba = document.getElementById("ba");
   if (!ba || BA_INIT) return; BA_INIT = true;
+
+  // load versions (shared cache with the watermarks tab)
+  if (!VERSIONS) {
+    try { VERSIONS = await (await fetch("/api/versions")).json(); } catch(e){}
+  }
+
+  if (VERSIONS && VERSIONS.versions && VERSIONS.versions.length) {
+    const latest = VERSIONS.versions[VERSIONS.versions.length - 1];
+    const attacks = latest.attacks.filter(a => a.image);
+
+    // set watermarked image (left)
+    document.getElementById("baBeforeImg").src = latest.image;
+
+    // model selector
+    if (attacks.length) {
+      const afterImg = document.getElementById("baAfterImg");
+      afterImg.src = attacks[0].image;
+      const seg = document.getElementById("baModelSeg");
+      seg.innerHTML = attacks.map((a, i) =>
+        `<button data-img="${a.image}" class="${i===0?"on":""}">${a.model}</button>`
+      ).join("");
+      seg.addEventListener("click", e => {
+        if (!e.target.dataset.img) return;
+        afterImg.src = e.target.dataset.img;
+        seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === e.target));
+      });
+      document.getElementById("baCtl").style.display = "";
+    }
+
+    // update caption
+    document.getElementById("baCap").innerHTML =
+      `<b>${latest.id.toUpperCase()} — ${latest.title}.</b> Drag to compare. ${latest.approach.split(".")[0]}.`;
+
+    // findings panel
+    renderFindings(VERSIONS.versions);
+  }
+
+  // slider drag
   const before = document.getElementById("baBefore"), handle = document.getElementById("baHandle");
   const setPos = p => { p = Math.max(2, Math.min(98, p));
     before.style.clipPath = `inset(0 ${100-p}% 0 0)`; handle.style.left = p + "%"; };
@@ -28,6 +66,36 @@ function initBA(){
   window.addEventListener("pointermove", move);
   window.addEventListener("pointerup", () => drag = false);
   setPos(50);
+}
+
+function renderFindings(versions){
+  const wrap = document.getElementById("findings");
+  const body = document.getElementById("findingsBody");
+  if (!wrap || !body) return;
+
+  // count attacks across all versions
+  let totalAttacks = 0, beaten = 0, refused = 0;
+  versions.forEach(v => v.attacks.forEach(a => {
+    totalAttacks++;
+    if (a.verdict === "clean_rescale") beaten++;
+    if (a.verdict === "refused") refused++;
+  }));
+  const manipulated = totalAttacks - beaten - refused;
+
+  body.innerHTML = `
+    <div class="finding-col">
+      <div class="k bad">Visible watermarks: all removed</div>
+      <p>Across ${versions.length} versions — fused layers, baked-in text, adversarial hi-freq noise — frontier editors (Kontext, gpt-image-2, Seedream) stripped every mark via full asset regeneration. ${manipulated} of ${totalAttacks} attacks returned a forensically <em>manipulated</em> result: the eraser rebuilt the asset rather than clean-erasing it.</p>
+    </div>
+    <div class="finding-col">
+      <div class="k warn">The pivot: detection, not prevention</div>
+      <p>Once an editor can regenerate an image from scratch, no visible or baked-in mark survives. So the project shifted from making marks that can't be removed to making their removal <em>provable</em>: three independent signals that survive any regeneration attempt.</p>
+    </div>
+    <div class="finding-col">
+      <div class="k ok">3 independent proofs of theft</div>
+      <p><strong>Invisible serial</strong> — a block-DCT watermark carrying a registry serial (survives JPEG q85, fails on regeneration by design). <strong>C2PA provenance</strong> — gpt-image-2 output self-declares <code>trainedAlgorithmicMedia</code> by OpenAI in the raw bytes. <strong>Forensic reconstruction</strong> — algorithmic edge vs. interior-flat error signatures reveal inpainting even on a clean-looking result.</p>
+    </div>`;
+  wrap.style.display = "";
 }
 document.querySelectorAll("[data-route]").forEach(el =>
   el.addEventListener("click", () => location.hash = el.dataset.route));
