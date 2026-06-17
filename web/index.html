@@ -49,6 +49,7 @@
   /* picker bar above the slider — single line, standard selects */
   .ba-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 26px;margin:26px 0 0}
   .ba-field{display:inline-flex;align-items:center;gap:9px}
+  .ba-field--right{margin-left:auto}
   .ba-field > span{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
   .ba-field select{font:inherit;font-size:13px;font-weight:600;color:var(--ink);
     background:var(--card);border:1px solid var(--line);border-radius:9px;padding:7px 11px;cursor:pointer}
@@ -211,7 +212,7 @@
       <span>Watermarked · version</span>
       <select id="baVersionSel" title="Watermark version"></select>
     </label>
-    <label class="ba-field">
+    <label class="ba-field ba-field--right">
       <span>After AI removal · attack model</span>
       <select id="baModelSel" title="Attack model"></select>
     </label>

@@ -36,25 +36,39 @@ async function initBA(){
       `<option value="${i}">${v.id.toUpperCase()} — ${v.title}</option>`).join("");
     verSel.value = String(versions.length - 1);
 
+    // verdict → how successfully the model removed the mark (best first)
+    const SUCCESS = {clean_rescale:3, edited:2, manipulated:1, refused:0};
+    // verdict → short outcome word shown in the dropdown option
+    const OUTCOME = {clean_rescale:"removed", edited:"removed", manipulated:"removed", refused:"refused"};
+
     function showModel(){
       const opt = modSel.options[modSel.selectedIndex];
-      const img = opt && opt.dataset.img;
-      if (img) afterImg.src = img;
+      if (!opt) return;
+      const v = versions[+verSel.value];
+      const model = opt.dataset.model, img = opt.dataset.img;
+      if (img) {
+        afterImg.src = img;
+        cap.innerHTML = `<b>${v.id.toUpperCase()} — ${v.title}.</b> Left: watermarked. ` +
+          `Right: after <b>${model}</b> — the mark is gone, but only because the model rebuilt the asset. Drag to compare.`;
+      } else {
+        // refused → no removal; the watermark survives, both halves identical
+        afterImg.src = beforeImg.src;
+        cap.innerHTML = `<b>${v.id.toUpperCase()} — ${v.title}.</b> ` +
+          `<b>${model}</b> refused to remove the watermark — the mark survives intact (both halves match).`;
+      }
     }
-    // rank an attack by how successfully it removed the mark (best first)
-    const SUCCESS = {clean_rescale:3, edited:2, manipulated:1, refused:0};
     function showVersion(){
       const v = versions[+verSel.value];
       beforeImg.src = v.image;
-      const attacks = v.attacks.filter(a => a.image)
-        .sort((x, y) => (SUCCESS[y.verdict]||0) - (SUCCESS[x.verdict]||0)
-                     || (y.confidence||0) - (x.confidence||0));
-      modSel.innerHTML = attacks.length
-        ? attacks.map(a => `<option data-img="${a.image}">${a.model}</option>`).join("")
-        : `<option data-img="">— no model removed it —</option>`;
+      // list EVERY attack model (refused ones included), most successful first
+      const attacks = v.attacks.slice().sort(
+        (x, y) => (SUCCESS[y.verdict]||0) - (SUCCESS[x.verdict]||0)
+                || (y.confidence||0) - (x.confidence||0));
+      modSel.innerHTML = attacks.map(a =>
+        `<option data-img="${a.image||""}" data-model="${a.model}" data-verdict="${a.verdict}">` +
+        `${a.model} · ${OUTCOME[a.verdict]||a.verdict}</option>`).join("");
       modSel.selectedIndex = 0;   // most successful attack first
       showModel();
-      cap.innerHTML = `<b>${v.id.toUpperCase()} — ${v.title}.</b> Drag to compare. ${v.approach.split(".")[0]}.`;
     }
     verSel.addEventListener("change", showVersion);
     modSel.addEventListener("change", showModel);
