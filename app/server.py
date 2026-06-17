@@ -39,9 +39,11 @@ REMOVAL_PROMPT = (
 MODEL_IDS = {"Flux Kontext": "fal-ai/flux-pro/kontext",
              "Flux Kontext Max": "fal-ai/flux-pro/kontext/max",
              "nano-banana": "fal-ai/nano-banana/edit  (Gemini 2.5 Flash Image)",
+             "Nano Banana Pro": "fal-ai/nano-banana-pro/edit  (Gemini 3 Pro Image)",
              "Qwen Image Edit": "fal-ai/qwen-image-edit",
+             "Seedream v4": "fal-ai/bytedance/seedream/v4/edit",
              "SeedEdit 3.0": "fal-ai/bytedance/seededit/v3/edit-image"}
-GENERATED_ON = os.environ.get("VERSIONS_DATE", "2026-06-13")
+GENERATED_ON = os.environ.get("VERSIONS_DATE", "2026-06-17")
 
 
 # ----------------------------------------------------------------- keys ------
@@ -322,6 +324,8 @@ class H(BaseHTTPRequestHandler):
             return self._versions()
         if path == "/api/example":
             return self._example()
+        if path == "/api/example-history":
+            return self._file(os.path.join(STATIC, "example-history.json"))
         if path.startswith("/static/"):
             p = self._safe(STATIC, path[len("/static/"):])
             return self._file(p) if p else self._send({"error": "bad path"}, 400)
@@ -347,7 +351,11 @@ class H(BaseHTTPRequestHandler):
     def _example(self):
         case = self.path.split("case=")[-1].split("&")[0] if "case=" in self.path else "theft"
         try:
-            if case == "resize":
+            ex = self._example_history_case(case)
+            if ex:                       # one of the pre-filled icons8 3D-Stickle tests
+                o = _rawurl(os.path.join(STATIC, "examples", ex["fileA"]))
+                r = _rawurl(os.path.join(STATIC, "examples", ex["fileB"]))
+            elif case == "resize":
                 o = _thumb(Image.open(os.path.join(STATIC, "example-master.png")), 900, "PNG")
                 r = _thumb(Image.open(os.path.join(STATIC, "example-edem.png")), 900, "PNG")
             else:   # theft: full-res marked master (invisible serial intact) vs AI suspect
@@ -356,6 +364,17 @@ class H(BaseHTTPRequestHandler):
             self._send({"original": o, "review": r})
         except Exception as e:
             self._send({"error": str(e)}, 500)
+
+    @staticmethod
+    def _example_history_case(case):
+        try:
+            with open(os.path.join(STATIC, "example-history.json")) as f:
+                for it in json.load(f).get("items", []):
+                    if it.get("case") == case:
+                        return it
+        except Exception:
+            pass
+        return None
 
     def do_POST(self):
         if self.path.split("?", 1)[0] != "/api/forensic":

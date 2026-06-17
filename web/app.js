@@ -9,7 +9,7 @@ function route(){
   window.scrollTo(0, 0);
   if (r === "home") initBA();
   if (r === "watermarks") loadVersions();
-  if (r === "detector") { checkHealth(); renderHistory(); }
+  if (r === "detector") { checkHealth(); initHistory(); }
 }
 
 // ---------------- before/after slider ----------------
@@ -74,7 +74,8 @@ async function initBA(){
     modSel.addEventListener("change", showModel);
     showVersion();
 
-    // findings panel
+    // findings + hero stats
+    renderHeroStats(versions);
     renderFindings(versions);
   }
 
@@ -92,32 +93,47 @@ async function initBA(){
   setPos(50);
 }
 
+function attackTally(versions){
+  let total = 0, cleaned = 0, refused = 0, models = 0;
+  versions.forEach((v, i) => { if (i === 0) models = v.attacks.length;
+    v.attacks.forEach(a => { total++;
+      if (a.verdict === "clean_rescale") cleaned++;
+      if (a.verdict === "refused") refused++; }); });
+  return {total, cleaned, refused, models, manipulated: total - cleaned - refused,
+          versions: versions.length};
+}
+function renderHeroStats(versions){
+  const el = document.getElementById("heroStats");
+  if (!el) return;
+  const t = attackTally(versions);
+  const stats = [
+    {n: t.models, l: "AI editors tested"},
+    {n: t.versions, l: "watermark versions"},
+    {n: t.cleaned, l: "clean removals", c: "ok"},
+    {n: t.manipulated, l: "reconstructed (caught)", c: "bad"},
+    {n: t.refused, l: "refused outright", c: "warn"},
+  ];
+  el.innerHTML = stats.map(s =>
+    `<div class="stat"><span class="n ${s.c||""}">${s.n}</span><span class="l">${s.l}</span></div>`).join("");
+}
 function renderFindings(versions){
   const wrap = document.getElementById("findings");
   const body = document.getElementById("findingsBody");
   if (!wrap || !body) return;
-
-  // count attacks across all versions
-  let totalAttacks = 0, beaten = 0, refused = 0;
-  versions.forEach(v => v.attacks.forEach(a => {
-    totalAttacks++;
-    if (a.verdict === "clean_rescale") beaten++;
-    if (a.verdict === "refused") refused++;
-  }));
-  const manipulated = totalAttacks - beaten - refused;
+  const t = attackTally(versions);
 
   body.innerHTML = `
     <div class="finding-col">
-      <div class="k bad">Visible watermarks: all removed</div>
-      <p>Across ${versions.length} versions — fused layers, baked-in text, adversarial hi-freq noise — frontier editors (Kontext, gpt-image-2, Seedream) stripped every mark via full asset regeneration. ${manipulated} of ${totalAttacks} attacks returned a forensically <em>manipulated</em> result: the eraser rebuilt the asset rather than clean-erasing it.</p>
+      <div class="k bad">No clean removal — on any version<span class="nm">01</span></div>
+      <p>Across ${t.versions} versions — fused layers, baked-in text, adversarial hi-freq noise — ${t.manipulated} of ${t.total} attacks came back forensically <em>manipulated</em>: the editor had to regenerate the whole asset to lose the mark. ${t.refused} were <em>refused</em> outright (Google's Nano Banana Pro declines watermark removal). <strong>${t.cleaned} clean erasures.</strong></p>
     </div>
     <div class="finding-col">
-      <div class="k warn">The pivot: detection, not prevention</div>
-      <p>Once an editor can regenerate an image from scratch, no visible or baked-in mark survives. So the project shifted from making marks that can't be removed to making their removal <em>provable</em>: three independent signals that survive any regeneration attempt.</p>
+      <div class="k warn">The pivot: detection, not prevention<span class="nm">02</span></div>
+      <p>Once an editor can regenerate an image from scratch, no visible or baked-in mark survives intact. So the project shifted from making marks that <em>can't</em> be removed to making their removal <em>provable</em> — three independent signals that outlive any regeneration attempt.</p>
     </div>
     <div class="finding-col">
-      <div class="k ok">3 independent proofs of theft</div>
-      <p><strong>Invisible serial</strong> — a block-DCT watermark carrying a registry serial (survives JPEG q85, fails on regeneration by design). <strong>C2PA provenance</strong> — gpt-image-2 output self-declares <code>trainedAlgorithmicMedia</code> by OpenAI in the raw bytes. <strong>Forensic reconstruction</strong> — algorithmic edge vs. interior-flat error signatures reveal inpainting even on a clean-looking result.</p>
+      <div class="k ok">3 independent proofs of theft<span class="nm">03</span></div>
+      <p><strong>Invisible serial</strong> — a block-DCT watermark carrying a registry serial (survives JPEG q85, fails on regeneration by design). <strong>C2PA provenance</strong> — AI output self-declares <code>trainedAlgorithmicMedia</code> in the raw bytes. <strong>Forensic reconstruction</strong> — edge vs. interior-flat error signatures reveal inpainting even on a clean-looking result.</p>
     </div>`;
   wrap.style.display = "";
 }
@@ -381,21 +397,51 @@ function badgeColor(v){ return v==="clean_rescale"?"#3c7d4d":v==="manipulated"?"
 function ago(t){ const s=(Date.now()-t)/1000;
   if (s<60) return "just now"; if (s<3600) return Math.floor(s/60)+"m ago";
   if (s<86400) return Math.floor(s/3600)+"h ago"; return Math.floor(s/86400)+"d ago"; }
+
+// seed the history once with real, already-run icons8 3D-Stickle tests
+const SEEDK = "wm_hist_seeded";
+async function seedHistory(){
+  let cur = [];
+  try { cur = JSON.parse(localStorage.getItem(HK) || "[]"); } catch(e){}
+  if (localStorage.getItem(SEEDK) || cur.length) return;
+  try {
+    const r = await (await fetch("/api/example-history")).json();
+    const seeded = (r.items||[]).map(it => ({
+      t: Date.now() - (it.ageMin||60)*60000, verdict: it.verdict, conf: it.conf,
+      mode: "algo", a: it.a, b: it.b, case: it.case, title: it.title, seed: true }));
+    if (seeded.length) localStorage.setItem(HK, JSON.stringify(seeded));
+    localStorage.setItem(SEEDK, "1");
+  } catch(e){ localStorage.setItem(SEEDK, "1"); }
+}
+async function initHistory(){ await seedHistory(); renderHistory(); }
+
+async function loadCase(c){
+  try {
+    const r = await (await fetch("/api/example?case=" + encodeURIComponent(c))).json();
+    if (r.original){ set("A", r.original, "original"); set("B", r.review, "under review");
+      document.getElementById("out").style.display = "none";
+      document.getElementById("view-detector").scrollIntoView({behavior:"smooth", block:"start"}); }
+  } catch(e){}
+}
 function renderHistory(){
   const wrap = document.getElementById("hist"), list = document.getElementById("hlist");
   let h = [];
   try { h = JSON.parse(localStorage.getItem(HK) || "[]"); } catch(e){}
   if (!h.length){ wrap.classList.add("hidden"); return; }
   wrap.classList.remove("hidden");
-  list.innerHTML = h.map(x => `
-    <div class="hitem">
+  list.innerHTML = h.map((x,i) => `
+    <div class="hitem${x.case?" clk":""}" ${x.case?`data-case="${x.case}"`:""} title="${x.case?"Click to re-run this test":""}">
       <div class="thumbs">${x.a?`<img src="${x.a}">`:""}${x.b?`<img src="${x.b}">`:""}</div>
-      <div><div><span class="hbadge" style="background:${badgeColor(x.verdict)}">${vLabel(x.verdict)}</span>
-        <b>${x.conf??""}%</b></div><div class="t">${x.mode==="ai"?"AI":"algo"} · ${ago(x.t)}</div></div>
+      <div class="hmeta"><div><span class="hbadge" style="background:${badgeColor(x.verdict)}">${vLabel(x.verdict)}</span>
+        <b>${x.conf??""}%</b></div>
+        ${x.title?`<div class="ht">${x.title}</div>`:""}
+        <div class="t">${x.seed?"sample":(x.mode==="ai"?"AI":"algo")} · ${ago(x.t)}</div></div>
     </div>`).join("");
+  list.querySelectorAll(".hitem.clk").forEach(el =>
+    el.addEventListener("click", () => loadCase(el.dataset.case)));
 }
 document.getElementById("histClear").addEventListener("click", () => {
-  localStorage.removeItem(HK); renderHistory();
+  localStorage.setItem(HK, "[]"); renderHistory();   // keep SEEDK so samples don't return
 });
 
 // remember the AI password across visits
