@@ -24,34 +24,40 @@ async function initBA(){
   }
 
   if (VERSIONS && VERSIONS.versions && VERSIONS.versions.length) {
-    const latest = VERSIONS.versions[VERSIONS.versions.length - 1];
-    const attacks = latest.attacks.filter(a => a.image);
+    const versions = VERSIONS.versions;
+    const beforeImg = document.getElementById("baBeforeImg");
+    const afterImg  = document.getElementById("baAfterImg");
+    const verSel    = document.getElementById("baVersionSel");
+    const modSel    = document.getElementById("baModelSel");
+    const cap       = document.getElementById("baCap");
 
-    // set watermarked image (left)
-    document.getElementById("baBeforeImg").src = latest.image;
+    // version dropdown — default to the latest
+    verSel.innerHTML = versions.map((v, i) =>
+      `<option value="${i}">${v.id.toUpperCase()} — ${v.title}</option>`).join("");
+    verSel.value = String(versions.length - 1);
 
-    // model selector
-    if (attacks.length) {
-      const afterImg = document.getElementById("baAfterImg");
-      afterImg.src = attacks[0].image;
-      const seg = document.getElementById("baModelSeg");
-      seg.innerHTML = attacks.map((a, i) =>
-        `<button data-img="${a.image}" class="${i===0?"on":""}">${a.model}</button>`
-      ).join("");
-      seg.addEventListener("click", e => {
-        if (!e.target.dataset.img) return;
-        afterImg.src = e.target.dataset.img;
-        seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === e.target));
-      });
-      document.getElementById("baCtl").style.display = "";
+    function showModel(){
+      const opt = modSel.options[modSel.selectedIndex];
+      const img = opt && opt.dataset.img;
+      if (img) afterImg.src = img;
     }
-
-    // update caption
-    document.getElementById("baCap").innerHTML =
-      `<b>${latest.id.toUpperCase()} — ${latest.title}.</b> Drag to compare. ${latest.approach.split(".")[0]}.`;
+    function showVersion(){
+      const v = versions[+verSel.value];
+      beforeImg.src = v.image;
+      const attacks = v.attacks.filter(a => a.image);
+      modSel.innerHTML = attacks.length
+        ? attacks.map(a => `<option data-img="${a.image}">${a.model}</option>`).join("")
+        : `<option data-img="">— no model removed it —</option>`;
+      modSel.selectedIndex = 0;
+      showModel();
+      cap.innerHTML = `<b>${v.id.toUpperCase()} — ${v.title}.</b> Drag to compare. ${v.approach.split(".")[0]}.`;
+    }
+    verSel.addEventListener("change", showVersion);
+    modSel.addEventListener("change", showModel);
+    showVersion();
 
     // findings panel
-    renderFindings(VERSIONS.versions);
+    renderFindings(versions);
   }
 
   // slider drag
@@ -62,7 +68,10 @@ async function initBA(){
   const move = e => { if (!drag) return;
     const x = (e.touches ? e.touches[0].clientX : e.clientX) - ba.getBoundingClientRect().left;
     setPos(x / ba.clientWidth * 100); };
-  ba.addEventListener("pointerdown", e => { drag = true; move(e); });
+  ba.addEventListener("pointerdown", e => {
+    if (e.target.closest(".ba-pick")) return;   // don't drag while using a dropdown
+    drag = true; move(e);
+  });
   window.addEventListener("pointermove", move);
   window.addEventListener("pointerup", () => drag = false);
   setPos(50);
