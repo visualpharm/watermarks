@@ -105,6 +105,12 @@ def main():
         entry = {k: base[k] for k in
                  ("id", "image", "title", "visibility", "protection", "commit", "approach")}
         entry["attacks"] = []
+        # richer metrics we lift from forensic so the UI can show distinct,
+        # per-attack scores + text instead of one saturated verdict number.
+        KEEP = ("removal_score", "anomalous_flat_blocks", "flat_error",
+                "edge_error", "mean_diff", "p99_diff", "added_content_pct",
+                "removed_content_pct", "max_block_excess",
+                "flat_pixels_wrong_pct")
         for name, model, slug in MODELS:
             fname = f"wm-{vid}-{slug}.jpg"
             out = os.path.join(VDIR, fname)
@@ -115,14 +121,28 @@ def main():
             a = {"model": name}
             if have:
                 res = forensic.analyze(clean, Image.open(out), want_heatmap=False)
+                m = res.get("metrics", {})
                 a.update(image=fname, verdict=res["verdict"],
-                         confidence=res["confidence"], summary=res["summary"])
+                         confidence=res["confidence"], summary=res["summary"],
+                         metrics={k: m[k] for k in KEEP if k in m},
+                         score=forensic.damage_score(m))
             else:
-                a.update(image=None, verdict="refused",
+                a.update(image=None, verdict="refused", confidence=None,
+                         score=None, metrics={},
                          summary="The model refused or failed to remove the watermark.")
             entry["attacks"].append(a)
             print(f"  {vid} / {name}: {a['verdict']}"
-                  + (f" ({a.get('confidence')}%)" if a.get("confidence") else ""))
+                  + (f" score {a.get('score')}" if a.get("score") is not None else ""))
+
+        # rank the successful attacks within THIS version (1 = most aggressive)
+        scored = sorted([x for x in entry["attacks"] if x.get("score") is not None],
+                        key=lambda x: x["score"], reverse=True)
+        total = len(scored)
+        rank = {id(x): i + 1 for i, x in enumerate(scored)}
+        for a in entry["attacks"]:
+            a["description"] = forensic.describe_attack(
+                a.get("metrics"), a["verdict"], model=a["model"],
+                rank=rank.get(id(a)), total=total)
         out_versions.append(entry)
 
     out = {"base": existing.get("base", "wm-clean.jpg"), "versions": out_versions}

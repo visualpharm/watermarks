@@ -122,6 +122,7 @@
 
   /* detector history */
   #hist{margin-top:28px}
+  #examples{margin-top:28px}
   .hlist{display:flex;gap:10px;flex-wrap:wrap}
   .hitem{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:11px;
     background:var(--card);padding:7px 11px 7px 7px;font-size:12px}
@@ -170,6 +171,10 @@
   .b-clean{background:var(--ok);color:#fff} .b-bad{background:var(--bad);color:#fff}
   .b-edit{background:var(--edit);color:#fff} .b-inc{background:var(--warn);color:#fff}
   .b-refused{background:#9b8d6f;color:#fff}
+  .badge .score{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;
+    background:rgba(255,255,255,.22);font-variant-numeric:tabular-nums;font-size:11px}
+  .capscore{display:inline-block;padding:1px 7px;margin-left:2px;border-radius:999px;
+    background:var(--bad);color:#fff;font-weight:800;font-size:11px;font-variant-numeric:tabular-nums}
   details.method{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
   details.method summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--accent)}
   details.method .body{margin-top:12px;font-size:13.5px;color:#46413a}
@@ -372,8 +377,15 @@
   <div class="note hidden" id="aiwarn"></div>
   <div id="out"></div>
 
+  <!-- permanent worked-example strip: always visible, server-fed, not localStorage -->
+  <div id="examples">
+    <h2 style="display:flex;align-items:center;gap:10px">Example detections
+      <span class="cap" style="margin:0;font-weight:400">3 real icons8 3D-Stickle tests — click any to load &amp; re-run</span></h2>
+    <div class="hlist" id="exlist"></div>
+  </div>
+
   <div id="hist" class="hidden">
-    <h2 style="display:flex;align-items:center;gap:10px">Recent detections
+    <h2 style="display:flex;align-items:center;gap:10px">Your recent detections
       <button class="link" id="histClear" style="font-size:12px">clear</button></h2>
     <div class="hlist" id="hlist"></div>
   </div>
@@ -382,6 +394,6 @@
 <!-- version detail modal -->
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 
-<script src="/web/app.js"></script>
+<script src="/web/app.js?v=2026-06-18"></script>
 </body>
 </html>

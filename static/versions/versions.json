@@ -15,41 +15,115 @@
           "image": "wm-v1-kontext.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 228 smooth-area block(s) rebuilt, mean pixel delta 27 (peak 188).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 228,
+            "flat_error": 14.546,
+            "edge_error": 48.847,
+            "mean_diff": 27.274,
+            "p99_diff": 188.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 11.318,
+            "max_block_excess": 147.731,
+            "flat_pixels_wrong_pct": 8.326
+          },
+          "score": 77,
+          "description": "Flux Kontext ran a heavy reconstruction: 228 smooth-area blocks rebuilt, mean pixel delta 27 (peak 188), contour error 49."
         },
         {
           "model": "Flux Kontext Max",
           "image": "wm-v1-kontextmax.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 297 smooth-area block(s) rebuilt, mean pixel delta 30 (peak 192).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 297,
+            "flat_error": 16.473,
+            "edge_error": 52.639,
+            "mean_diff": 29.885,
+            "p99_diff": 192.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 11.263,
+            "max_block_excess": 179.798,
+            "flat_pixels_wrong_pct": 9.853
+          },
+          "score": 81,
+          "description": "Flux Kontext Max ran a heavy reconstruction: 297 smooth-area blocks rebuilt, mean pixel delta 30 (peak 192), contour error 53."
         },
         {
           "model": "nano-banana",
           "image": "wm-v1-nano.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 18 smooth-area block(s) rebuilt, mean pixel delta 37 (peak 169).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 18,
+            "flat_error": 27.288,
+            "edge_error": 54.895,
+            "mean_diff": 37.035,
+            "p99_diff": 169.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 0.125,
+            "max_block_excess": 126.649,
+            "flat_pixels_wrong_pct": 22.677
+          },
+          "score": 68,
+          "description": "nano-banana ran a moderate reconstruction: 18 smooth-area blocks rebuilt, mean pixel delta 37 (peak 169), contour error 55."
         },
         {
           "model": "Nano Banana Pro",
           "image": null,
           "verdict": "refused",
-          "summary": "The model refused or failed to remove the watermark."
+          "confidence": null,
+          "score": null,
+          "metrics": {},
+          "summary": "The model refused or failed to remove the watermark.",
+          "description": "The model declined or failed to remove the watermark \u2014 the mark survives intact."
         },
         {
           "model": "Qwen Image Edit",
           "image": "wm-v1-qwen.jpg",
           "verdict": "manipulated",
           "confidence": 71,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 49 smooth-area block(s) rebuilt, mean pixel delta 10 (peak 48).",
+          "metrics": {
+            "removal_score": 64.508,
+            "anomalous_flat_blocks": 49,
+            "flat_error": 7.448,
+            "edge_error": 14.642,
+            "mean_diff": 10.153,
+            "p99_diff": 48.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 13.473,
+            "max_block_excess": 33.135,
+            "flat_pixels_wrong_pct": 0.086
+          },
+          "score": 39,
+          "description": "Qwen Image Edit ran the lightest reconstruction: 49 smooth-area blocks rebuilt, mean pixel delta 10 (peak 48), contour error 15 \u2014 the lightest touch of the set."
         },
         {
           "model": "Seedream v4",
           "image": "wm-v1-seedream.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 397 smooth-area block(s) rebuilt, mean pixel delta 46 (peak 198).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 397,
+            "flat_error": 34.57,
+            "edge_error": 69.51,
+            "mean_diff": 46.154,
+            "p99_diff": 198.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 16.356,
+            "max_block_excess": 171.065,
+            "flat_pixels_wrong_pct": 16.421
+          },
+          "score": 95,
+          "description": "Seedream v4 ran the most aggressive reconstruction: 397 smooth-area blocks rebuilt, mean pixel delta 46 (peak 198), contour error 70 \u2014 the most aggressive reconstruction of the set."
         }
       ]
     },
@@ -67,41 +141,115 @@
           "image": "wm-v2-kontext.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 245 smooth-area block(s) rebuilt, mean pixel delta 29 (peak 187).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 245,
+            "flat_error": 16.409,
+            "edge_error": 51.056,
+            "mean_diff": 29.336,
+            "p99_diff": 187.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 11.74,
+            "max_block_excess": 136.917,
+            "flat_pixels_wrong_pct": 10.151
+          },
+          "score": 79,
+          "description": "Flux Kontext ran a heavy reconstruction: 245 smooth-area blocks rebuilt, mean pixel delta 29 (peak 187), contour error 51."
         },
         {
           "model": "Flux Kontext Max",
           "image": "wm-v2-kontextmax.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 315 smooth-area block(s) rebuilt, mean pixel delta 33 (peak 200).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 315,
+            "flat_error": 18.835,
+            "edge_error": 59.684,
+            "mean_diff": 32.519,
+            "p99_diff": 200.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 0.0,
+            "max_block_excess": 177.672,
+            "flat_pixels_wrong_pct": 11.522
+          },
+          "score": 85,
+          "description": "Flux Kontext Max ran the most aggressive reconstruction: 315 smooth-area blocks rebuilt, mean pixel delta 33 (peak 200), contour error 60."
         },
         {
           "model": "nano-banana",
           "image": "wm-v2-nano.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 207 smooth-area block(s) rebuilt, mean pixel delta 31 (peak 189).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 207,
+            "flat_error": 19.444,
+            "edge_error": 51.149,
+            "mean_diff": 31.471,
+            "p99_diff": 189.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 12.799,
+            "max_block_excess": 163.031,
+            "flat_pixels_wrong_pct": 8.286
+          },
+          "score": 79,
+          "description": "nano-banana ran a heavy reconstruction: 207 smooth-area blocks rebuilt, mean pixel delta 31 (peak 189), contour error 51."
         },
         {
           "model": "Nano Banana Pro",
           "image": null,
           "verdict": "refused",
-          "summary": "The model refused or failed to remove the watermark."
+          "confidence": null,
+          "score": null,
+          "metrics": {},
+          "summary": "The model refused or failed to remove the watermark.",
+          "description": "The model declined or failed to remove the watermark \u2014 the mark survives intact."
         },
         {
           "model": "Qwen Image Edit",
           "image": "wm-v2-qwen.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 115 smooth-area block(s) rebuilt, mean pixel delta 13 (peak 69).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 115,
+            "flat_error": 10.567,
+            "edge_error": 15.862,
+            "mean_diff": 12.587,
+            "p99_diff": 69.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 14.669,
+            "max_block_excess": 75.921,
+            "flat_pixels_wrong_pct": 3.339
+          },
+          "score": 47,
+          "description": "Qwen Image Edit ran a light reconstruction: 115 smooth-area blocks rebuilt, mean pixel delta 13 (peak 69), contour error 16 \u2014 the lightest touch of the set."
         },
         {
           "model": "Seedream v4",
           "image": "wm-v2-seedream.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 236 smooth-area block(s) rebuilt, mean pixel delta 44 (peak 200).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 236,
+            "flat_error": 32.796,
+            "edge_error": 67.345,
+            "mean_diff": 44.131,
+            "p99_diff": 200.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 16.293,
+            "max_block_excess": 172.875,
+            "flat_pixels_wrong_pct": 17.996
+          },
+          "score": 91,
+          "description": "Seedream v4 ran the most aggressive reconstruction: 236 smooth-area blocks rebuilt, mean pixel delta 44 (peak 200), contour error 67 \u2014 the most aggressive reconstruction of the set."
         }
       ]
     },
@@ -119,41 +267,115 @@
           "image": "wm-v3-kontext.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 279 smooth-area block(s) rebuilt, mean pixel delta 28 (peak 187).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 279,
+            "flat_error": 14.18,
+            "edge_error": 50.116,
+            "mean_diff": 27.636,
+            "p99_diff": 187.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 11.618,
+            "max_block_excess": 140.662,
+            "flat_pixels_wrong_pct": 7.908
+          },
+          "score": 78,
+          "description": "Flux Kontext ran a heavy reconstruction: 279 smooth-area blocks rebuilt, mean pixel delta 28 (peak 187), contour error 50."
         },
         {
           "model": "Flux Kontext Max",
           "image": "wm-v3-kontextmax.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 304 smooth-area block(s) rebuilt, mean pixel delta 35 (peak 203).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 304,
+            "flat_error": 22.297,
+            "edge_error": 60.391,
+            "mean_diff": 35.058,
+            "p99_diff": 203.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 0.0,
+            "max_block_excess": 176.188,
+            "flat_pixels_wrong_pct": 12.119
+          },
+          "score": 86,
+          "description": "Flux Kontext Max ran the most aggressive reconstruction: 304 smooth-area blocks rebuilt, mean pixel delta 35 (peak 203), contour error 60 \u2014 the most aggressive reconstruction of the set."
         },
         {
           "model": "nano-banana",
           "image": "wm-v3-nano.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 197 smooth-area block(s) rebuilt, mean pixel delta 21 (peak 167).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 197,
+            "flat_error": 11.128,
+            "edge_error": 37.854,
+            "mean_diff": 21.263,
+            "p99_diff": 167.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 12.909,
+            "max_block_excess": 106.133,
+            "flat_pixels_wrong_pct": 3.835
+          },
+          "score": 69,
+          "description": "nano-banana ran a moderate reconstruction: 197 smooth-area blocks rebuilt, mean pixel delta 21 (peak 167), contour error 38."
         },
         {
           "model": "Nano Banana Pro",
           "image": null,
           "verdict": "refused",
-          "summary": "The model refused or failed to remove the watermark."
+          "confidence": null,
+          "score": null,
+          "metrics": {},
+          "summary": "The model refused or failed to remove the watermark.",
+          "description": "The model declined or failed to remove the watermark \u2014 the mark survives intact."
         },
         {
           "model": "Qwen Image Edit",
           "image": "wm-v3-qwen.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 114 smooth-area block(s) rebuilt, mean pixel delta 11 (peak 67).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 114,
+            "flat_error": 9.43,
+            "edge_error": 14.368,
+            "mean_diff": 11.329,
+            "p99_diff": 67.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 15.009,
+            "max_block_excess": 75.408,
+            "flat_pixels_wrong_pct": 3.418
+          },
+          "score": 46,
+          "description": "Qwen Image Edit ran a light reconstruction: 114 smooth-area blocks rebuilt, mean pixel delta 11 (peak 67), contour error 14 \u2014 the lightest touch of the set."
         },
         {
           "model": "Seedream v4",
           "image": "wm-v3-seedream.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 21 smooth-area block(s) rebuilt, mean pixel delta 26 (peak 156).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 21,
+            "flat_error": 18.05,
+            "edge_error": 41.569,
+            "mean_diff": 25.832,
+            "p99_diff": 156.0,
+            "added_content_pct": 1.87,
+            "removed_content_pct": 14.588,
+            "max_block_excess": 45.789,
+            "flat_pixels_wrong_pct": 1.669
+          },
+          "score": 59,
+          "description": "Seedream v4 ran a moderate reconstruction: 21 smooth-area blocks rebuilt, mean pixel delta 26 (peak 156), contour error 42."
         }
       ]
     },
@@ -171,41 +393,115 @@
           "image": "wm-v4-kontext.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 296 smooth-area block(s) rebuilt, mean pixel delta 27 (peak 187).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 296,
+            "flat_error": 13.983,
+            "edge_error": 48.984,
+            "mean_diff": 27.109,
+            "p99_diff": 187.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 11.608,
+            "max_block_excess": 141.936,
+            "flat_pixels_wrong_pct": 7.792
+          },
+          "score": 78,
+          "description": "Flux Kontext ran a heavy reconstruction: 296 smooth-area blocks rebuilt, mean pixel delta 27 (peak 187), contour error 49 \u2014 the most aggressive reconstruction of the set."
         },
         {
           "model": "Flux Kontext Max",
           "image": "wm-v4-kontextmax.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 173 smooth-area block(s) rebuilt, mean pixel delta 26 (peak 175).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 173,
+            "flat_error": 10.896,
+            "edge_error": 45.421,
+            "mean_diff": 25.528,
+            "p99_diff": 175.0,
+            "added_content_pct": 4.225,
+            "removed_content_pct": 12.471,
+            "max_block_excess": 78.166,
+            "flat_pixels_wrong_pct": 5.28
+          },
+          "score": 72,
+          "description": "Flux Kontext Max ran a heavy reconstruction: 173 smooth-area blocks rebuilt, mean pixel delta 26 (peak 175), contour error 45."
         },
         {
           "model": "nano-banana",
           "image": "wm-v4-nano.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 35 smooth-area block(s) rebuilt, mean pixel delta 26 (peak 157).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 35,
+            "flat_error": 16.249,
+            "edge_error": 40.573,
+            "mean_diff": 25.537,
+            "p99_diff": 157.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 13.042,
+            "max_block_excess": 82.162,
+            "flat_pixels_wrong_pct": 9.603
+          },
+          "score": 61,
+          "description": "nano-banana ran a moderate reconstruction: 35 smooth-area blocks rebuilt, mean pixel delta 26 (peak 157), contour error 41."
         },
         {
           "model": "Nano Banana Pro",
           "image": null,
           "verdict": "refused",
-          "summary": "The model refused or failed to remove the watermark."
+          "confidence": null,
+          "score": null,
+          "metrics": {},
+          "summary": "The model refused or failed to remove the watermark.",
+          "description": "The model declined or failed to remove the watermark \u2014 the mark survives intact."
         },
         {
           "model": "Qwen Image Edit",
           "image": "wm-v4-qwen.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 207 smooth-area block(s) rebuilt, mean pixel delta 17 (peak 121).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 207,
+            "flat_error": 10.584,
+            "edge_error": 27.268,
+            "mean_diff": 16.904,
+            "p99_diff": 121.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 12.859,
+            "max_block_excess": 88.734,
+            "flat_pixels_wrong_pct": 4.738
+          },
+          "score": 60,
+          "description": "Qwen Image Edit ran a moderate reconstruction: 207 smooth-area blocks rebuilt, mean pixel delta 17 (peak 121), contour error 27 \u2014 the lightest touch of the set."
         },
         {
           "model": "Seedream v4",
           "image": "wm-v4-seedream.jpg",
           "verdict": "manipulated",
           "confidence": 74,
-          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized."
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 51 smooth-area block(s) rebuilt, mean pixel delta 29 (peak 171).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 51,
+            "flat_error": 19.916,
+            "edge_error": 47.72,
+            "mean_diff": 28.907,
+            "p99_diff": 171.0,
+            "added_content_pct": 3.38,
+            "removed_content_pct": 13.576,
+            "max_block_excess": 49.959,
+            "flat_pixels_wrong_pct": 2.632
+          },
+          "score": 68,
+          "description": "Seedream v4 ran a moderate reconstruction: 51 smooth-area blocks rebuilt, mean pixel delta 29 (peak 171), contour error 48."
         }
       ]
     }

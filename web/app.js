@@ -46,10 +46,15 @@ async function initBA(){
       if (!opt) return;
       const v = versions[+verSel.value];
       const model = opt.dataset.model, img = opt.dataset.img;
+      const atk = (v.attacks || []).find(x => x.model === model) || {};
       if (img) {
         afterImg.src = img;
+        const score = (atk.score != null)
+          ? ` <span class="capscore" title="reconstruction intensity, 0–100">damage ${atk.score}/100</span>` : "";
+        const detail = atk.description
+          ? ` ${atk.description}` : " the mark is gone, but only because the model rebuilt the asset.";
         cap.innerHTML = `<b>${v.id.toUpperCase()} — ${v.title}.</b> Left: watermarked. ` +
-          `Right: after <b>${model}</b> — the mark is gone, but only because the model rebuilt the asset. Drag to compare.`;
+          `Right: after <b>${model}</b>${score} —${detail} Drag to compare.`;
       } else {
         // refused → no removal; the watermark survives, both halves identical
         afterImg.src = beforeImg.src;
@@ -60,13 +65,14 @@ async function initBA(){
     function showVersion(){
       const v = versions[+verSel.value];
       beforeImg.src = v.image;
-      // list EVERY attack model (refused ones included), most successful first
+      // list EVERY attack model (refused ones included); heaviest rebuild first
       const attacks = v.attacks.slice().sort(
         (x, y) => (SUCCESS[y.verdict]||0) - (SUCCESS[x.verdict]||0)
-                || (y.confidence||0) - (x.confidence||0));
-      modSel.innerHTML = attacks.map(a =>
-        `<option data-img="${a.image||""}" data-model="${a.model}" data-verdict="${a.verdict}">` +
-        `${a.model} · ${OUTCOME[a.verdict]||a.verdict}</option>`).join("");
+                || (y.score||0) - (x.score||0));
+      modSel.innerHTML = attacks.map(a => {
+        const tag = (a.score != null) ? ` · damage ${a.score}` : "";
+        return `<option data-img="${a.image||""}" data-model="${a.model}" data-verdict="${a.verdict}">` +
+          `${a.model} · ${OUTCOME[a.verdict]||a.verdict}${tag}</option>`; }).join("");
       modSel.selectedIndex = 0;   // most successful attack first
       showModel();
     }
@@ -185,11 +191,14 @@ function openVersion(i){
     const img = a.image
       ? `<img src="${a.image}">`
       : `<div class="none">model refused / failed to remove the watermark</div>`;
-    const conf = a.confidence ? ` (${a.confidence}%)` : "";
+    // per-attack DAMAGE score (varies a lot); falls back to nothing if absent
+    const score = (a.score != null)
+      ? ` <span class="score" title="reconstruction intensity, 0–100">${a.score}</span>` : "";
+    const text = a.description || interpret(a.verdict);
     return `<div class="a card">
-        <div class="hd"><b>${a.model}</b><span class="badge ${cls}">${lab}${conf}</span></div>
+        <div class="hd"><b>${a.model}</b><span class="badge ${cls}">${lab}${score}</span></div>
         ${img}
-        <div class="desc" style="color:var(--mut);font-size:12.5px;margin-top:8px">${interpret(a.verdict)}</div>
+        <div class="desc" style="color:var(--mut);font-size:12.5px;margin-top:8px">${text}</div>
         <div class="mono" style="font-size:10.5px;color:#9a9385;margin-top:6px">${a.model_id||""}</div>
       </div>`;
   }).join("");
@@ -293,7 +302,8 @@ function updateMode(){
   } else warn.classList.add("hidden");
 }
 
-document.getElementById("go").addEventListener("click", async () => {
+async function runAnalysis(){
+  if (!(S.A && S.B)) return;
   const go = document.getElementById("go"), out = document.getElementById("out");
   go.disabled = true; go.innerHTML = '<span class="spin"></span>Analyzing…'; out.style.display = "none";
   try {
@@ -312,7 +322,8 @@ document.getElementById("go").addEventListener("click", async () => {
     out.style.display = "block";
   } catch(e){ out.innerHTML = `<div class="err">Request failed: ${e}</div>`; out.style.display = "block"; }
   go.disabled = false; go.textContent = "Analyze";
-});
+}
+document.getElementById("go").addEventListener("click", runAnalysis);
 
 function vClass(v){ return v==="clean_rescale"?"v-clean":v==="manipulated"?"v-bad":v==="edited"?"v-edit":"v-inc"; }
 function vLabel(v){ return v==="clean_rescale"?"CLEAN RESCALE":v==="manipulated"?"MANIPULATED":v==="edited"?"EDITED":"INCONCLUSIVE"; }
@@ -398,29 +409,40 @@ function ago(t){ const s=(Date.now()-t)/1000;
   if (s<60) return "just now"; if (s<3600) return Math.floor(s/60)+"m ago";
   if (s<86400) return Math.floor(s/3600)+"h ago"; return Math.floor(s/86400)+"d ago"; }
 
-// seed the history once with real, already-run icons8 3D-Stickle tests
-const SEEDK = "wm_hist_seeded";
-async function seedHistory(){
-  let cur = [];
-  try { cur = JSON.parse(localStorage.getItem(HK) || "[]"); } catch(e){}
-  if (localStorage.getItem(SEEDK) || cur.length) return;
-  try {
-    const r = await (await fetch("/api/example-history")).json();
-    const seeded = (r.items||[]).map(it => ({
-      t: Date.now() - (it.ageMin||60)*60000, verdict: it.verdict, conf: it.conf,
-      mode: "algo", a: it.a, b: it.b, case: it.case, title: it.title, seed: true }));
-    if (seeded.length) localStorage.setItem(HK, JSON.stringify(seeded));
-    localStorage.setItem(SEEDK, "1");
-  } catch(e){ localStorage.setItem(SEEDK, "1"); }
+// permanent worked-example strip — server-fed, ALWAYS shown, independent of
+// localStorage (the old seed-once-into-history approach silently no-op'd for
+// anyone with stale state or a cached JS bundle). Render directly from the API.
+let EXAMPLES = null;
+async function renderExamples(){
+  const wrap = document.getElementById("examples"), list = document.getElementById("exlist");
+  if (!wrap || !list) return;
+  if (!EXAMPLES){
+    try { EXAMPLES = (await (await fetch("/api/example-history")).json()).items || []; }
+    catch(e){ EXAMPLES = []; }
+  }
+  if (!EXAMPLES.length){ wrap.style.display = "none"; return; }
+  wrap.style.display = "";
+  list.innerHTML = EXAMPLES.map(x => `
+    <div class="hitem clk" data-case="${x.case}" title="Click to load &amp; re-run this test">
+      <div class="thumbs">${x.a?`<img src="${x.a}">`:""}${x.b?`<img src="${x.b}">`:""}</div>
+      <div class="hmeta"><div><span class="hbadge" style="background:${badgeColor(x.verdict)}">${vLabel(x.verdict)}</span>
+        <b>${x.conf??""}%</b></div>
+        ${x.title?`<div class="ht">${x.title}</div>`:""}
+        ${x.label?`<div class="t">${x.label}</div>`:""}</div>
+    </div>`).join("");
+  list.querySelectorAll(".hitem.clk").forEach(el =>
+    el.addEventListener("click", () => loadCase(el.dataset.case)));
 }
-async function initHistory(){ await seedHistory(); renderHistory(); }
+async function initHistory(){ renderExamples(); renderHistory(); }
 
 async function loadCase(c){
   try {
     const r = await (await fetch("/api/example?case=" + encodeURIComponent(c))).json();
-    if (r.original){ set("A", r.original, "original"); set("B", r.review, "under review");
-      document.getElementById("out").style.display = "none";
-      document.getElementById("view-detector").scrollIntoView({behavior:"smooth", block:"start"}); }
+    if (r.original){
+      set("A", r.original, "original"); set("B", r.review, "under review");
+      document.getElementById("view-detector").scrollIntoView({behavior:"smooth", block:"start"});
+      runAnalysis();           // load AND run, so the verdict shows immediately
+    }
   } catch(e){}
 }
 function renderHistory(){
@@ -441,7 +463,7 @@ function renderHistory(){
     el.addEventListener("click", () => loadCase(el.dataset.case)));
 }
 document.getElementById("histClear").addEventListener("click", () => {
-  localStorage.setItem(HK, "[]"); renderHistory();   // keep SEEDK so samples don't return
+  localStorage.setItem(HK, "[]"); renderHistory();   // examples strip is separate, stays
 });
 
 // remember the AI password across visits

@@ -291,8 +291,10 @@ def analyze(img_a, img_b, want_heatmap=True):
     if strong_removal:
         verdict = "manipulated"
         conf = int(min(97, 60 + (removal_score - 52) * 0.9))
-        summary = ("The subject's own pixels were reconstructed (watermark "
-                   "removal / AI inpainting), not just resized.")
+        summary = (
+            f"The subject's own pixels were reconstructed (watermark removal / "
+            f"AI inpainting), not just resized — {n_anom} smooth-area block(s) "
+            f"rebuilt, mean pixel delta {mean_all:.0f} (peak {p99:.0f}).")
         reasons = edited + reasons
     elif edited:
         verdict = "edited"
@@ -353,6 +355,70 @@ def _inconclusive(msg, conf, metrics=None):
 
 def _round(d):
     return {k: (round(v, 3) if isinstance(v, float) else v) for k, v in d.items()}
+
+
+# ----------------------------------------------------- per-attack scoring ---
+# The verdict ("manipulated") tells you THAT the asset was reconstructed; the
+# damage score tells you HOW HARD the editor had to work. `analyze`'s internal
+# removal_score saturates (~68 for every successful removal), so it can't rank
+# editors against each other. This blends four independent intensity signals —
+# how many smooth blocks were rebuilt, how far pixels moved on average, the
+# worst-case shift, and the contour error — into a spread-out 0-100 number.
+import math as _math
+
+
+def damage_score(metrics):
+    """0-100 reconstruction-intensity score. Higher = more aggressive rebuild.
+    Varies a lot across editors (unlike the saturated verdict confidence)."""
+    if not metrics:
+        return None
+    n = metrics.get("anomalous_flat_blocks", 0) or 0
+    mn = metrics.get("mean_diff", 0) or 0
+    p99 = metrics.get("p99_diff", 0) or 0
+    ee = metrics.get("edge_error", 0) or 0
+    # block count spans >1 decade (18..400) -> log; the rest are linear-capped
+    n_c = min(1.0, _math.log10(1 + n) / _math.log10(1 + 400))
+    mn_c = min(1.0, mn / 50.0)
+    p99_c = min(1.0, p99 / 210.0)
+    ee_c = min(1.0, ee / 72.0)
+    raw = 0.34 * n_c + 0.30 * mn_c + 0.22 * p99_c + 0.14 * ee_c
+    return int(round(5 + raw * 94))         # ~5..99, nothing reads as a flat 0
+
+
+def _intensity_word(score):
+    if score >= 85:
+        return "the most aggressive"
+    if score >= 72:
+        return "a heavy"
+    if score >= 55:
+        return "a moderate"
+    if score >= 42:
+        return "a light"
+    return "the lightest"
+
+
+def describe_attack(metrics, verdict, model=None, rank=None, total=None):
+    """One sentence built from THIS attack's own numbers, so no two read alike.
+    `rank` (1 = heaviest) and `total` add relative wording when supplied."""
+    if verdict == "refused" or not metrics:
+        return ("The model declined or failed to remove the watermark — the "
+                "mark survives intact.")
+    n = int(metrics.get("anomalous_flat_blocks", 0) or 0)
+    mn = metrics.get("mean_diff", 0) or 0
+    p99 = metrics.get("p99_diff", 0) or 0
+    ee = metrics.get("edge_error", 0) or 0
+    sc = damage_score(metrics)
+    word = _intensity_word(sc)
+    rel = ""
+    if rank and total:
+        if rank == 1:
+            rel = " — the most aggressive reconstruction of the set"
+        elif rank == total:
+            rel = " — the lightest touch of the set"
+    name = (model + " ran ") if model else "This was "
+    return (f"{name}{word} reconstruction: {n} smooth-area blocks rebuilt, "
+            f"mean pixel delta {mn:.0f} (peak {p99:.0f}), contour error "
+            f"{ee:.0f}{rel}.")
 
 
 def _heatmap(diff, flat, overlap, added, removed):
