@@ -32,7 +32,7 @@ FAL_KEY = os.environ.get("FAL_KEY") or _from_env_files(
     "FAL_KEY", ("~/projects/lira/.env.local",))  # dev fallback: lira keeps the key
 assert FAL_KEY, "no FAL_KEY"
 
-# OpenAI gpt-image-1 (direct image-edit API). Several project keys exist; we pick
+# OpenAI gpt-image-1 / gpt-image-2 (direct image-edit API). Several project keys exist; we pick
 # the first that isn't at its billing hard limit at call time.
 OPENAI_KEY = os.environ.get("OPENAI_API_KEY") or _from_env_files(
     "OPENAI_API_KEY", ("~/projects/guide/.env.local", "~/projects/trago/.env.local",
@@ -54,7 +54,8 @@ MODELS = [
     ("Nano Banana Pro",  "fal-ai/nano-banana-pro/edit",        "nanopro"),
     ("Qwen Image Edit",  "fal-ai/qwen-image-edit",             "qwen"),
     ("Seedream v4",      "fal-ai/bytedance/seedream/v4/edit",  "seedream"),
-    ("GPT image",        "openai:gpt-image-1",                 "gptimage"),
+    ("GPT Image 1",      "openai:gpt-image-1",                 "gptimage"),
+    ("GPT Image 2",      "openai:gpt-image-2",                 "gptimage2"),
 ]
 
 PROMPT = (
@@ -125,7 +126,7 @@ def _multipart(fields, files):
 
 
 def openai_edit(model, src, out):
-    """Call OpenAI's image-edit API for gpt-image-1, save JPEG to `out`.
+    """Call OpenAI's image-edit API (gpt-image-1 / gpt-image-2), save JPEG to `out`.
     Returns True on a saved image, False on refusal/failure (recorded as
     'refused' upstream, exactly like a FAL refusal)."""
     if not OPENAI_KEY:
