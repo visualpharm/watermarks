@@ -21,15 +21,20 @@
 - Result: every version now shows multiple models AND multiple results.
 
 ## Data today (static/versions/versions.json)
-- 2 attack models per version: Flux Kontext, nano-banana.
-- v1: Kontext removed, nano refused
-- v2: Kontext removed, nano removed
-- v3: Kontext removed, nano refused
-- v4: Kontext removed, nano refused   ← latest = default
+- 7 attack models per version: Flux Kontext, Flux Kontext Max, nano-banana,
+  Nano Banana Pro, Qwen Image Edit, Seedream v4, GPT image (OpenAI gpt-image-1).
+- Every model removes the mark by regenerating the asset EXCEPT Nano Banana Pro,
+  which refuses on all four versions.
+- GPT image regenerates the whole frame from scratch (fresh 1024² composition) —
+  the watermark is gone but so is the original asset; it carries a damage score
+  like the others.
+- Dropdown is sorted heaviest-rebuild first (verdict rank, then damage score);
+  the most successful removal is the default option.
 
 ## Verify headless
-- Default = V4 + Flux Kontext; before wm-v4.jpg, after wm-v4-kontext.jpg.
-- v4 attack dropdown has 2 options (not 1).
-- Switch to v2 → both options removable; switch model swaps the right image.
-- Pick a "refused" model → right image == left image, caption says refused.
+- Default version = latest (v4); default model = the heaviest successful removal.
+- Each version's attack dropdown lists ALL 7 models (refused ones included).
+- Switch model → swaps the right (after) image; caption shows the damage score.
+- Pick the "refused" model (Nano Banana Pro) → right image == left image, caption
+  says refused.
 - RIGHT field is right-aligned; bar is a single row on desktop.

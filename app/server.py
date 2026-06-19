@@ -42,6 +42,7 @@ MODEL_IDS = {"Flux Kontext": "fal-ai/flux-pro/kontext",
              "Nano Banana Pro": "fal-ai/nano-banana-pro/edit  (Gemini 3 Pro Image)",
              "Qwen Image Edit": "fal-ai/qwen-image-edit",
              "Seedream v4": "fal-ai/bytedance/seedream/v4/edit",
+             "GPT image": "openai /v1/images/edits  (gpt-image-1)",
              "SeedEdit 3.0": "fal-ai/bytedance/seededit/v3/edit-image"}
 GENERATED_ON = os.environ.get("VERSIONS_DATE", "2026-06-17")
 

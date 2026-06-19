@@ -124,6 +124,28 @@
           },
           "score": 95,
           "description": "Seedream v4 ran the most aggressive reconstruction: 397 smooth-area blocks rebuilt, mean pixel delta 46 (peak 198), contour error 70 \u2014 the most aggressive reconstruction of the set."
+        },
+        {
+          "model": "GPT image",
+          "model_id": "gpt-image-1",
+          "image": "wm-v1-gptimage.jpg",
+          "verdict": "manipulated",
+          "confidence": 93,
+          "summary": "The editor regenerated the whole product image from scratch \u2014 a fresh composition with the watermark gone and the asset fully reconstructed (global pixel delta 65).",
+          "metrics": {
+            "removal_score": 40.0,
+            "anomalous_flat_blocks": 0,
+            "flat_error": 55.693,
+            "edge_error": 87.212,
+            "mean_diff": 66.878,
+            "p99_diff": 203.0,
+            "added_content_pct": 0.0,
+            "removed_content_pct": 4.662,
+            "max_block_excess": 0.0,
+            "flat_pixels_wrong_pct": 44.73
+          },
+          "score": 82,
+          "description": "GPT image regenerated the entire product shot from scratch: a brand-new composition with every watermark gone and the box, labels and barcodes redrawn (global pixel delta 65/255). The mark is destroyed \u2014 along with the original asset."
         }
       ]
     },
@@ -249,7 +271,18 @@
             "flat_pixels_wrong_pct": 17.996
           },
           "score": 91,
-          "description": "Seedream v4 ran the most aggressive reconstruction: 236 smooth-area blocks rebuilt, mean pixel delta 44 (peak 200), contour error 67 \u2014 the most aggressive reconstruction of the set."
+          "description": "Seedream v4 ran the most aggressive reconstruction: 236 smooth-area blocks rebuilt, mean pixel delta 44 (peak 200), contour error 67."
+        },
+        {
+          "model": "GPT image",
+          "model_id": "gpt-image-1",
+          "image": "wm-v2-gptimage.jpg",
+          "verdict": "manipulated",
+          "confidence": 74,
+          "summary": "The editor regenerated the whole product image from scratch \u2014 a fresh composition with the watermark gone and the asset fully reconstructed (global pixel delta 74).",
+          "metrics": {},
+          "score": 92,
+          "description": "GPT image regenerated the entire product shot from scratch: a brand-new composition with every watermark gone and the box, labels and barcodes redrawn (global pixel delta 74/255). The mark is destroyed \u2014 along with the original asset."
         }
       ]
     },
@@ -376,6 +409,28 @@
           },
           "score": 59,
           "description": "Seedream v4 ran a moderate reconstruction: 21 smooth-area blocks rebuilt, mean pixel delta 26 (peak 156), contour error 42."
+        },
+        {
+          "model": "GPT image",
+          "model_id": "gpt-image-1",
+          "image": "wm-v3-gptimage.jpg",
+          "verdict": "manipulated",
+          "confidence": 74,
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 8 smooth-area block(s) rebuilt, mean pixel delta 59 (peak 205).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 8,
+            "flat_error": 45.591,
+            "edge_error": 82.429,
+            "mean_diff": 59.428,
+            "p99_diff": 205.0,
+            "added_content_pct": 0.081,
+            "removed_content_pct": 8.606,
+            "max_block_excess": 178.907,
+            "flat_pixels_wrong_pct": 33.954
+          },
+          "score": 78,
+          "description": "GPT image ran a heavy reconstruction: 8 smooth-area blocks rebuilt, mean pixel delta 59 (peak 205), contour error 82."
         }
       ]
     },
@@ -407,7 +462,7 @@
             "flat_pixels_wrong_pct": 7.792
           },
           "score": 78,
-          "description": "Flux Kontext ran a heavy reconstruction: 296 smooth-area blocks rebuilt, mean pixel delta 27 (peak 187), contour error 49 \u2014 the most aggressive reconstruction of the set."
+          "description": "Flux Kontext ran a heavy reconstruction: 296 smooth-area blocks rebuilt, mean pixel delta 27 (peak 187), contour error 49."
         },
         {
           "model": "Flux Kontext Max",
@@ -502,6 +557,28 @@
           },
           "score": 68,
           "description": "Seedream v4 ran a moderate reconstruction: 51 smooth-area blocks rebuilt, mean pixel delta 29 (peak 171), contour error 48."
+        },
+        {
+          "model": "GPT image",
+          "model_id": "gpt-image-1",
+          "image": "wm-v4-gptimage.jpg",
+          "verdict": "manipulated",
+          "confidence": 74,
+          "summary": "The subject's own pixels were reconstructed (watermark removal / AI inpainting), not just resized \u2014 224 smooth-area block(s) rebuilt, mean pixel delta 60 (peak 204).",
+          "metrics": {
+            "removal_score": 68.0,
+            "anomalous_flat_blocks": 224,
+            "flat_error": 48.449,
+            "edge_error": 80.259,
+            "mean_diff": 59.743,
+            "p99_diff": 204.0,
+            "added_content_pct": 6.445,
+            "removed_content_pct": 0.0,
+            "max_block_excess": 168.699,
+            "flat_pixels_wrong_pct": 31.203
+          },
+          "score": 95,
+          "description": "GPT image ran the most aggressive reconstruction: 224 smooth-area blocks rebuilt, mean pixel delta 60 (peak 204), contour error 80 \u2014 the most aggressive reconstruction of the set."
         }
       ]
     }
